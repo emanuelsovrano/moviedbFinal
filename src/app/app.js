@@ -1,4 +1,10 @@
-var apiKey = '8dce3f182f08900d69796df3ce6f31f0';
+import 'bootstrap';
+import * as _ from 'lodash';
+import 'less';
+
+import {apiKey} from "./constants";
+import {showDetails} from './movie-details/movie-details';
+
 
 // jQuery verwendet um einen event zu registrieren (sobald die seite / document geladen / ready ist)
 $(document).ready(function () {
@@ -16,12 +22,10 @@ $(document).ready(function () {
                 .append(
                     $('<button>')
                         .text('>')
-                        .on('click', showDetails)
+                        .on('click', function(){
+                            return showDetails(movie.id);
+                        })
                 );
         });
     });
 });
-
-function showDetails() {
-    console.log('movie clicked');
-}
