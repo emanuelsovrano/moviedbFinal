@@ -9,16 +9,15 @@ $(document).ready(function () {
     $.get(url, function (data) {
         var movies = data.results; // die Response (data) ist bereits ein Json Objekt.
         _.each(movies, function (movie, index) {// Lodash each Funktion verwenden um über die File zu iterieren.
-            $('<div>') // JQuery verwendet um ein neues HTML Element zu erstellen und ins DOM einzufügen.
+            $('<li>') // JQuery verwendet um ein neues HTML Element zu erstellen und ins DOM einzufügen.
                 .appendTo('#result')
+                .addClass('list-group-item')
                 .text(movie.title)
-                .addClass('well')
                 .append(
                     $('<button>')
                         .text('>')
                         .on('click', showDetails)
-                )
-                .append('<br>');
+                );
         });
     });
 });
