@@ -2,12 +2,13 @@ const webpack = require('webpack');
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ExtractTextWebpackPlugin = require('extract-text-webpack-plugin');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 
 module.exports = {
     entry: {
         app: './src/app/app.js',
-        vendor: ['jquery', 'bootstrap', 'lodash', 'less']
+        vendor: ['core-js', 'jquery', 'bootstrap', 'lodash', 'less']
     },
     output: {
         path: path.resolve(__dirname, 'public'),
@@ -16,8 +17,8 @@ module.exports = {
     module: {
         rules: [
             {test: /\.css/, use: ExtractTextWebpackPlugin.extract({use: 'css-loader'})},
-            {test: /\.less$/, use: ExtractTextWebpackPlugin.extract({use: ['css-loader', 'less-loader']})
-            }
+            {test: /\.less$/, use: ExtractTextWebpackPlugin.extract({use: ['css-loader', 'less-loader']})},
+            {test: /\.js$/, use: 'babel-loader', exclude: /node_modules/ }
         ]
     },
     plugins: [
@@ -27,8 +28,14 @@ module.exports = {
         }),
         new HtmlWebpackPlugin({template:'src/index.html'}),
         new ExtractTextWebpackPlugin('app/app.[chunkhash].css'),
-        new webpack.optimize.CommonsChunkPlugin({names: ['vendor', 'manifest']})
-    ]
+        new webpack.optimize.CommonsChunkPlugin({names: ['vendor', 'manifest']}),
+        new BundleAnalyzerPlugin({
+            reportFilename: '../public/bundle-report.html',
+            analyzerMode: 'static',
+            defaultSizes: 'gzip',
+            openAnalyzer: false})
+    ],
+    devServer: { contentBase: 'public/' }
 }
 
 

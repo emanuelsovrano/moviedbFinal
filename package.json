@@ -7,8 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "analyze": "eslint src/**/*.js",
     "clean": "rimraf public",
-    "build": "webpack",
-    "start": "lite-server"
+    "build": "npm run clean && webpack -p",
+    "start": "webpack-dev-server --open --port 4567"
   },
   "repository": {
     "type": "git",
@@ -21,14 +21,21 @@
   },
   "homepage": "https://github.com/gitLinda/Movies#readme",
   "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-preset-env": "^1.6.1",
     "css-loader": "^0.28.7",
     "eslint": "^4.8.0",
     "extract-text-webpack-plugin": "^3.0.1",
+    "file-loader": "^1.1.5",
     "html-webpack-plugin": "^2.30.1",
     "less-loader": "^4.0.5",
     "lite-server": "2.3.0",
     "rimraf": "^2.6.2",
-    "webpack": "^3.8.1"
+    "url-loader": "^0.6.2",
+    "webpack": "^3.8.1",
+    "webpack-bundle-analyzer": "^2.9.0",
+    "webpack-dev-server": "^2.9.3"
   },
   "dependencies": {
     "bootstrap": "^3.3.7",
