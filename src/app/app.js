@@ -1,5 +1,4 @@
 import '../css/index.less';
-//import '../../node_modules/bootstrap/dist/css/bootstrap.css'
 import 'bootstrap';
 import * as _ from 'lodash';
 import 'less';

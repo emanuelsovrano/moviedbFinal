@@ -12,20 +12,19 @@ module.exports = {
     },
     output: {
         path: path.resolve(__dirname, 'public'),
-        filename: './app/[name].[chunkhash].js' },
+        filename: './app/[name].[chunkhash].js'
+    },
     devtool: 'source-map',
     module: {
         rules: [
-            {test: /\.css/, use: ExtractTextWebpackPlugin.extract({use: 'css-loader'})},
+            {test: /\.css$/, use: ExtractTextWebpackPlugin.extract({use: ['css-loader']})},
             {test: /\.less$/, use: ExtractTextWebpackPlugin.extract({use: ['css-loader', 'less-loader']})},
+            {test: /\.(jpg|png|svg|ttf|woff|woff2|eot)$/, use: 'url-loader?limit=25000'},
             {test: /\.js$/, use: 'babel-loader', exclude: /node_modules/ }
         ]
     },
     plugins: [
-        new webpack.ProvidePlugin({
-            $: 'jquery',
-            jQuery: 'jquery'
-        }),
+        new webpack.ProvidePlugin({$: 'jquery', jQuery: 'jquery'}),
         new HtmlWebpackPlugin({template:'src/index.html'}),
         new ExtractTextWebpackPlugin('app/app.[chunkhash].css'),
         new webpack.optimize.CommonsChunkPlugin({names: ['vendor', 'manifest']}),
@@ -37,7 +36,3 @@ module.exports = {
     ],
     devServer: { contentBase: 'public/' }
 }
-
-
-
-
