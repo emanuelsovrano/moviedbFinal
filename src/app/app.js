@@ -2,7 +2,7 @@ import '../css/index.less';
 import 'bootstrap';
 import * as _ from 'lodash';
 import 'less';
-import model from './movie-model';
+import createModel from './movie-model';
 
 import {apiKey} from "./constants";
 import {showDetails} from './movie-details/movie-details';
@@ -15,7 +15,11 @@ $searchInput.on('blur', doSearch);
 $search.on('submit', doSearch);
 $searchBtn.on('click', doSearch);
 
+const model = createModel();
+
+
 function renderMovies() {
+
     const $resultList = $('#result');
     $resultList.html('');
     for (const movie of model.movieList) {
@@ -26,7 +30,7 @@ function renderMovies() {
             .append(
                 $('<button>')
                     .text('>')
-                    .on('click', () => showDetails(movie.id))
+                    .on('click', () => showDetails(model.getMovie(movie.id)))
             );
     }
 }
