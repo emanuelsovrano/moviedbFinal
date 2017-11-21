@@ -11,14 +11,9 @@ const $searchInput = $('#search-input');
 const $search = $('#search-bar');
 const $searchBtn = $('#search-btn');
 
-$searchInput.on('blur', updateMovieList);
-$search.on('submit', updateMovieList);
+$searchInput.on('blur', doSearch);
+$search.on('submit', doSearch);
 $searchBtn.on('click', doSearch);
-
-function updateMovieList() {
-    doSearch();
-    renderMovies();
-}
 
 function renderMovies() {
     const $resultList = $('#result');
