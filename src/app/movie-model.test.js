@@ -1,5 +1,6 @@
-import model from './movie-model';
+import createModel from './movie-model';
 
+const model = createModel();
 const movie = {id:123, title: 'abc', vote_average: 6.8, vote_count: 1200};;
 
 test('model is created', () => {
