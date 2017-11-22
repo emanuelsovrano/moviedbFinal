@@ -7,7 +7,7 @@ const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPl
 
 module.exports = {
     entry: {
-        app: './src/app/app.js',
+        app: './src/app/app.ts',
         vendor: ['core-js', 'jquery', 'bootstrap', 'lodash', 'less']
     },
     output: {

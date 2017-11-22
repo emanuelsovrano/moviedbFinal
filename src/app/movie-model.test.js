@@ -1,7 +1,12 @@
 import createModel from './movie-model';
+import 'jest';
 
-const model = createModel();
-const movie = {id:123, title: 'abc', vote_average: 6.8, vote_count: 1200};;
+const movie = {id:123, title: 'abc', vote_average: 6.8, vote_count: 1200};
+
+let model;
+beforeEach(() => {
+    model = createModel();
+});
 
 test('model is created', () => {
    expect(model).toBeDefined();
