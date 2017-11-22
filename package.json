@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "analyze": "eslint src/**/*.js",
+    "analyze": "tslint src/**/*.ts",
     "clean": "rimraf public",
     "build": "npm run clean && webpack -p",
     "start": "webpack-dev-server --open --port 4567"
@@ -15,10 +15,18 @@
       "./jest-config.js"
     ],
     "verbose": true,
+    "moduleFileExtensions": [
+      "ts",
+      "js"
+    ],
     "transform": {
       "^.+\\.js$": "babel-jest",
+      "^.+\\.tsx?$": "<rootDir>/node_modules/ts-jest/preprocessor.js",
       "^.+\\.(css|scss|less)$": "jest-css-modules"
     },
+    "testMatch": [
+      "**/?(*.)(spec|test).(ts|js)"
+    ],
     "moduleDirectories": [
       "node_modules",
       "src"
@@ -35,12 +43,12 @@
   },
   "homepage": "https://github.com/gitLinda/Movies#readme",
   "devDependencies": {
+    "@types/jest": "^21.1.6",
     "@types/jquery": "^3.2.16",
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.2",
     "babel-preset-env": "^1.6.1",
     "css-loader": "^0.28.7",
-    "eslint": "^4.8.0",
     "extract-text-webpack-plugin": "^3.0.1",
     "file-loader": "^1.1.5",
     "html-webpack-plugin": "^2.30.1",
@@ -48,7 +56,9 @@
     "less-loader": "^4.0.5",
     "rimraf": "^2.6.2",
     "style-loader": "^0.19.0",
+    "ts-jest": "^21.2.3",
     "ts-loader": "^3.1.1",
+    "tslint": "^5.8.0",
     "typescript": "^2.6.1",
     "url-loader": "^0.6.2",
     "webpack": "^3.8.1",
