@@ -1,10 +1,10 @@
 import '../css/index.less';
 import 'bootstrap';
-import * as _ from 'lodash';
+// import * as _ from 'lodash';
 import 'less';
 import createModel from './movie-model';
 
-import {apiKey} from "./constants";
+import {apiKey} from './constants';
 import {showDetails} from './movie-details/movie-details';
 
 const $searchInput = $('#search-input');
@@ -16,7 +16,6 @@ $search.on('submit', doSearch);
 $searchBtn.on('click', doSearch);
 
 const model = createModel();
-
 
 function renderMovies() {
 
@@ -41,7 +40,7 @@ function doSearch() {
 
     model.resetMovieList();
 
-    $.get(url, function (data) {
+    $.get(url, (data) => {
         const movies = data.results;
         for (const movie of movies) {
             model.addMovie(movie);
@@ -53,15 +52,14 @@ $(model).on('modelchange', () => {
     renderMovies();
 });
 
-function prepareUI () {
-    var formsNodeList = document.querySelectorAll('form');
+function prepareUI() {
+    const formsNodeList = document.querySelectorAll('form');
 
-    for (var i = 0; i < formsNodeList.length; i++) {
-        formsNodeList[i].addEventListener('submit', function (e) {
+    for (let i = 0; i < formsNodeList.length; i++) {
+        formsNodeList[i].addEventListener('submit', (e) => {
             e.preventDefault();
         });
     }
 }
-
 
 prepareUI();
