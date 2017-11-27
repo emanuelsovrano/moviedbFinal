@@ -3,5 +3,5 @@ import $ from 'jquery';
 
 global.$ = global.jQuery = $;
 
-global.window = new jsdom.JSDOM("");
-global.document = new jsdom.JSDOM("").document;
+global.document = jsdom.jsdom();
+global.window =  jsdom.jsdom().defaultView;
