@@ -27,9 +27,9 @@ export class MovieCard extends React.Component<IMovieCardProps, {}> {
             imageFit: ImageFit.cover
           };
         
-        return <CompoundButton className="MovieCard" onClick={this.props.onOpenMovie} width={ 150 } height={ 150 }>
+        return <button className="MovieCard" onClick={this.props.onOpenMovie}>
             <Image className="MovieCard-Cover" { ...imageProps as any } width={ 150 } height={ 150 }/>
             <Label className="MovieCard-Title" >{this.props.description}</Label>
-        </CompoundButton>;
+        </button>;
     }
 }

@@ -666,7 +666,7 @@ var fontFace_1 = __webpack_require__(89);
 exports.fontFace = fontFace_1.fontFace;
 var keyframes_1 = __webpack_require__(90);
 exports.keyframes = keyframes_1.keyframes;
-var Stylesheet_1 = __webpack_require__(12);
+var Stylesheet_1 = __webpack_require__(11);
 exports.InjectionMode = Stylesheet_1.InjectionMode;
 exports.Stylesheet = Stylesheet_1.Stylesheet;
 
@@ -1464,17 +1464,6 @@ exports.getStyles = Utilities_1.memoizeFunction(function (theme) {
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(64), exports);
-
-
-/***/ }),
-/* 12 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = __webpack_require__(0);
 /**
  * Injection mode for the stylesheet.
  *
@@ -1641,6 +1630,17 @@ function _createStyleElement(content) {
     document.head.appendChild(styleElement);
     return styleElement;
 }
+
+
+/***/ }),
+/* 12 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+tslib_1.__exportStar(__webpack_require__(64), exports);
 
 
 /***/ }),
@@ -1914,7 +1914,7 @@ exports.EventGroup = EventGroup;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Stylesheet_1 = __webpack_require__(12);
+var Stylesheet_1 = __webpack_require__(11);
 var kebabRules_1 = __webpack_require__(83);
 var prefixRules_1 = __webpack_require__(84);
 var provideUnits_1 = __webpack_require__(86);
@@ -4200,7 +4200,7 @@ module.exports = warning;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Stylesheet_1 = __webpack_require__(12);
+var Stylesheet_1 = __webpack_require__(11);
 /**
  * Separates the classes and style objects. Any classes that are pre-registered
  * args are auto expanded into objects.
@@ -5660,7 +5660,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var React = __webpack_require__(2);
-var Button_1 = __webpack_require__(11);
+var Button_1 = __webpack_require__(12);
 var Utilities_1 = __webpack_require__(1);
 var SearchBox_1 = __webpack_require__(163);
 var Nav_1 = __webpack_require__(168);
@@ -7506,7 +7506,7 @@ exports.mergeStyleSets = mergeStyleSets;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Stylesheet_1 = __webpack_require__(12);
+var Stylesheet_1 = __webpack_require__(11);
 var styleToClassName_1 = __webpack_require__(14);
 /**
  * Registers a font face.
@@ -7525,7 +7525,7 @@ exports.fontFace = fontFace;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Stylesheet_1 = __webpack_require__(12);
+var Stylesheet_1 = __webpack_require__(11);
 var styleToClassName_1 = __webpack_require__(14);
 /**
  * Registers keyframe definitions.
@@ -13217,7 +13217,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 var React = __webpack_require__(2);
 var Utilities_1 = __webpack_require__(1);
-var Button_1 = __webpack_require__(11);
+var Button_1 = __webpack_require__(12);
 var Icon_1 = __webpack_require__(15);
 var getClassNames = Utilities_1.classNamesFunction();
 var SearchBoxBase = /** @class */ (function (_super) {
@@ -13556,7 +13556,7 @@ var tslib_1 = __webpack_require__(0);
 var React = __webpack_require__(2);
 var Utilities_1 = __webpack_require__(1);
 var FocusZone_1 = __webpack_require__(50);
-var Button_1 = __webpack_require__(11);
+var Button_1 = __webpack_require__(12);
 var Icon_1 = __webpack_require__(15);
 var stylesImport = __webpack_require__(171);
 var styles = stylesImport;
@@ -13857,7 +13857,7 @@ var Panel_types_1 = __webpack_require__(61);
 var Layer_1 = __webpack_require__(27);
 var Overlay_1 = __webpack_require__(177);
 var Popup_1 = __webpack_require__(54);
-var Button_1 = __webpack_require__(11);
+var Button_1 = __webpack_require__(12);
 var Styling_1 = __webpack_require__(3);
 var stylesImport = __webpack_require__(181);
 var styles = stylesImport;
@@ -14331,7 +14331,6 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var React = __webpack_require__(2);
-var Button_1 = __webpack_require__(11);
 var Image_1 = __webpack_require__(183);
 var Label_1 = __webpack_require__(185);
 __webpack_require__(189);
@@ -14345,9 +14344,9 @@ var MovieCard = /** @class */ (function (_super) {
             src: this.props.imgUrl,
             imageFit: Image_1.ImageFit.cover
         };
-        return React.createElement(Button_1.CompoundButton, { className: "MovieCardContainer", onClick: this.props.onOpenMovie, width: 150, height: 150 },
-            React.createElement(Image_1.Image, __assign({ className: "MovieCardContainer-Cover" }, imageProps, { width: 150, height: 150 })),
-            React.createElement(Label_1.Label, { className: "MovieCardContainer-Title" }, this.props.description));
+        return React.createElement("button", { className: "MovieCard", onClick: this.props.onOpenMovie },
+            React.createElement(Image_1.Image, __assign({ className: "MovieCard-Cover" }, imageProps, { width: 150, height: 150 })),
+            React.createElement(Label_1.Label, { className: "MovieCard-Title" }, this.props.description));
     };
     MovieCard.defaultProps = {
         imgUrl: 'http://placehold.it/500x500',
@@ -14518,7 +14517,7 @@ exports = module.exports = __webpack_require__(29)(undefined);
 
 
 // module
-exports.push([module.i, ".MovieCardContainer {\n  display: flex;\n  background: cadetblue;\n  flex-direction: column;\n  align-items: center;\n  margin: 0;\n}\n.MovieCardContainer-Cover {\n  flex: none;\n}\n.MovieCardContainer-Title {\n  flex: none;\n}\n", ""]);
+exports.push([module.i, ".MovieCard {\n  display: inline-flex;\n  background: cadetblue;\n  border: none;\n  flex-direction: column;\n  align-items: center;\n  margin: 0;\n}\n.MovieCard-Cover {\n  flex: none;\n}\n.MovieCard-Title {\n  flex: none;\n}\n", ""]);
 
 // exports
 
