@@ -1,0 +1,40 @@
+.MovieDB {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    & header {
+        flex: 0 0 50px;
+        background: gold;
+        overflow: hidden;
+        display: flex;
+    }
+
+    & main {
+        background: yellowgreen;
+        flex: 1 0 100px;
+        overflow: auto;
+    }
+
+    &-Menu {
+        flex: 0 0 50px;
+        &-Icon {
+            font-size: 30px;
+            font-weight: bold;
+        }
+    }
+
+     &-Title {
+         color: red;
+         flex: 3 0 120px;
+        margin: 0;
+     }
+
+     &-SearchBox {
+        float: right;
+        flex-grow: 1 0 150px;
+        margin: 5px;
+     }
+}
