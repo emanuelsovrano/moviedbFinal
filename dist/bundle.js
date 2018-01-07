@@ -60,7 +60,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 66);
+/******/ 	return __webpack_require__(__webpack_require__.s = 72);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -256,20 +256,20 @@ function __makeTemplateObject(cooked, raw) {
 
 /***/ }),
 /* 1 */
+/***/ (function(module, exports) {
+
+module.exports = React;
+
+/***/ }),
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(69), exports);
+tslib_1.__exportStar(__webpack_require__(75), exports);
 
-
-/***/ }),
-/* 2 */
-/***/ (function(module, exports) {
-
-module.exports = React;
 
 /***/ }),
 /* 3 */
@@ -290,14 +290,468 @@ tslib_1.__exportStar(__webpack_require__(4), exports);
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(112), exports);
-tslib_1.__exportStar(__webpack_require__(18), exports);
-tslib_1.__exportStar(__webpack_require__(27), exports);
-tslib_1.__exportStar(__webpack_require__(46), exports);
+tslib_1.__exportStar(__webpack_require__(118), exports);
+tslib_1.__exportStar(__webpack_require__(20), exports);
+tslib_1.__exportStar(__webpack_require__(31), exports);
+tslib_1.__exportStar(__webpack_require__(50), exports);
 
 
 /***/ }),
 /* 5 */
+/***/ (function(module, exports) {
+
+/*
+	MIT License http://www.opensource.org/licenses/mit-license.php
+	Author Tobias Koppers @sokra
+*/
+// css base code, injected by the css-loader
+module.exports = function(useSourceMap) {
+	var list = [];
+
+	// return the list of modules as css string
+	list.toString = function toString() {
+		return this.map(function (item) {
+			var content = cssWithMappingToString(item, useSourceMap);
+			if(item[2]) {
+				return "@media " + item[2] + "{" + content + "}";
+			} else {
+				return content;
+			}
+		}).join("");
+	};
+
+	// import a list of modules into the list
+	list.i = function(modules, mediaQuery) {
+		if(typeof modules === "string")
+			modules = [[null, modules, ""]];
+		var alreadyImportedModules = {};
+		for(var i = 0; i < this.length; i++) {
+			var id = this[i][0];
+			if(typeof id === "number")
+				alreadyImportedModules[id] = true;
+		}
+		for(i = 0; i < modules.length; i++) {
+			var item = modules[i];
+			// skip already imported module
+			// this implementation is not 100% perfect for weird media query combinations
+			//  when a module is imported multiple times with different media queries.
+			//  I hope this will never occur (Hey this way we have smaller bundles)
+			if(typeof item[0] !== "number" || !alreadyImportedModules[item[0]]) {
+				if(mediaQuery && !item[2]) {
+					item[2] = mediaQuery;
+				} else if(mediaQuery) {
+					item[2] = "(" + item[2] + ") and (" + mediaQuery + ")";
+				}
+				list.push(item);
+			}
+		}
+	};
+	return list;
+};
+
+function cssWithMappingToString(item, useSourceMap) {
+	var content = item[1] || '';
+	var cssMapping = item[3];
+	if (!cssMapping) {
+		return content;
+	}
+
+	if (useSourceMap && typeof btoa === 'function') {
+		var sourceMapping = toComment(cssMapping);
+		var sourceURLs = cssMapping.sources.map(function (source) {
+			return '/*# sourceURL=' + cssMapping.sourceRoot + source + ' */'
+		});
+
+		return [content].concat(sourceURLs).concat([sourceMapping]).join('\n');
+	}
+
+	return [content].join('\n');
+}
+
+// Adapted from convert-source-map (MIT)
+function toComment(sourceMap) {
+	// eslint-disable-next-line no-undef
+	var base64 = btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap))));
+	var data = 'sourceMappingURL=data:application/json;charset=utf-8;base64,' + base64;
+
+	return '/*# ' + data + ' */';
+}
+
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports, __webpack_require__) {
+
+/*
+	MIT License http://www.opensource.org/licenses/mit-license.php
+	Author Tobias Koppers @sokra
+*/
+
+var stylesInDom = {};
+
+var	memoize = function (fn) {
+	var memo;
+
+	return function () {
+		if (typeof memo === "undefined") memo = fn.apply(this, arguments);
+		return memo;
+	};
+};
+
+var isOldIE = memoize(function () {
+	// Test for IE <= 9 as proposed by Browserhacks
+	// @see http://browserhacks.com/#hack-e71d8692f65334173fee715c222cb805
+	// Tests for existence of standard globals is to allow style-loader
+	// to operate correctly into non-standard environments
+	// @see https://github.com/webpack-contrib/style-loader/issues/177
+	return window && document && document.all && !window.atob;
+});
+
+var getElement = (function (fn) {
+	var memo = {};
+
+	return function(selector) {
+		if (typeof memo[selector] === "undefined") {
+			var styleTarget = fn.call(this, selector);
+			// Special case to return head of iframe instead of iframe itself
+			if (styleTarget instanceof window.HTMLIFrameElement) {
+				try {
+					// This will throw an exception if access to iframe is blocked
+					// due to cross-origin restrictions
+					styleTarget = styleTarget.contentDocument.head;
+				} catch(e) {
+					styleTarget = null;
+				}
+			}
+			memo[selector] = styleTarget;
+		}
+		return memo[selector]
+	};
+})(function (target) {
+	return document.querySelector(target)
+});
+
+var singleton = null;
+var	singletonCounter = 0;
+var	stylesInsertedAtTop = [];
+
+var	fixUrls = __webpack_require__(193);
+
+module.exports = function(list, options) {
+	if (typeof DEBUG !== "undefined" && DEBUG) {
+		if (typeof document !== "object") throw new Error("The style-loader cannot be used in a non-browser environment");
+	}
+
+	options = options || {};
+
+	options.attrs = typeof options.attrs === "object" ? options.attrs : {};
+
+	// Force single-tag solution on IE6-9, which has a hard limit on the # of <style>
+	// tags it will allow on a page
+	if (!options.singleton && typeof options.singleton !== "boolean") options.singleton = isOldIE();
+
+	// By default, add <style> tags to the <head> element
+	if (!options.insertInto) options.insertInto = "head";
+
+	// By default, add <style> tags to the bottom of the target
+	if (!options.insertAt) options.insertAt = "bottom";
+
+	var styles = listToStyles(list, options);
+
+	addStylesToDom(styles, options);
+
+	return function update (newList) {
+		var mayRemove = [];
+
+		for (var i = 0; i < styles.length; i++) {
+			var item = styles[i];
+			var domStyle = stylesInDom[item.id];
+
+			domStyle.refs--;
+			mayRemove.push(domStyle);
+		}
+
+		if(newList) {
+			var newStyles = listToStyles(newList, options);
+			addStylesToDom(newStyles, options);
+		}
+
+		for (var i = 0; i < mayRemove.length; i++) {
+			var domStyle = mayRemove[i];
+
+			if(domStyle.refs === 0) {
+				for (var j = 0; j < domStyle.parts.length; j++) domStyle.parts[j]();
+
+				delete stylesInDom[domStyle.id];
+			}
+		}
+	};
+};
+
+function addStylesToDom (styles, options) {
+	for (var i = 0; i < styles.length; i++) {
+		var item = styles[i];
+		var domStyle = stylesInDom[item.id];
+
+		if(domStyle) {
+			domStyle.refs++;
+
+			for(var j = 0; j < domStyle.parts.length; j++) {
+				domStyle.parts[j](item.parts[j]);
+			}
+
+			for(; j < item.parts.length; j++) {
+				domStyle.parts.push(addStyle(item.parts[j], options));
+			}
+		} else {
+			var parts = [];
+
+			for(var j = 0; j < item.parts.length; j++) {
+				parts.push(addStyle(item.parts[j], options));
+			}
+
+			stylesInDom[item.id] = {id: item.id, refs: 1, parts: parts};
+		}
+	}
+}
+
+function listToStyles (list, options) {
+	var styles = [];
+	var newStyles = {};
+
+	for (var i = 0; i < list.length; i++) {
+		var item = list[i];
+		var id = options.base ? item[0] + options.base : item[0];
+		var css = item[1];
+		var media = item[2];
+		var sourceMap = item[3];
+		var part = {css: css, media: media, sourceMap: sourceMap};
+
+		if(!newStyles[id]) styles.push(newStyles[id] = {id: id, parts: [part]});
+		else newStyles[id].parts.push(part);
+	}
+
+	return styles;
+}
+
+function insertStyleElement (options, style) {
+	var target = getElement(options.insertInto)
+
+	if (!target) {
+		throw new Error("Couldn't find a style target. This probably means that the value for the 'insertInto' parameter is invalid.");
+	}
+
+	var lastStyleElementInsertedAtTop = stylesInsertedAtTop[stylesInsertedAtTop.length - 1];
+
+	if (options.insertAt === "top") {
+		if (!lastStyleElementInsertedAtTop) {
+			target.insertBefore(style, target.firstChild);
+		} else if (lastStyleElementInsertedAtTop.nextSibling) {
+			target.insertBefore(style, lastStyleElementInsertedAtTop.nextSibling);
+		} else {
+			target.appendChild(style);
+		}
+		stylesInsertedAtTop.push(style);
+	} else if (options.insertAt === "bottom") {
+		target.appendChild(style);
+	} else if (typeof options.insertAt === "object" && options.insertAt.before) {
+		var nextSibling = getElement(options.insertInto + " " + options.insertAt.before);
+		target.insertBefore(style, nextSibling);
+	} else {
+		throw new Error("[Style Loader]\n\n Invalid value for parameter 'insertAt' ('options.insertAt') found.\n Must be 'top', 'bottom', or Object.\n (https://github.com/webpack-contrib/style-loader#insertat)\n");
+	}
+}
+
+function removeStyleElement (style) {
+	if (style.parentNode === null) return false;
+	style.parentNode.removeChild(style);
+
+	var idx = stylesInsertedAtTop.indexOf(style);
+	if(idx >= 0) {
+		stylesInsertedAtTop.splice(idx, 1);
+	}
+}
+
+function createStyleElement (options) {
+	var style = document.createElement("style");
+
+	options.attrs.type = "text/css";
+
+	addAttrs(style, options.attrs);
+	insertStyleElement(options, style);
+
+	return style;
+}
+
+function createLinkElement (options) {
+	var link = document.createElement("link");
+
+	options.attrs.type = "text/css";
+	options.attrs.rel = "stylesheet";
+
+	addAttrs(link, options.attrs);
+	insertStyleElement(options, link);
+
+	return link;
+}
+
+function addAttrs (el, attrs) {
+	Object.keys(attrs).forEach(function (key) {
+		el.setAttribute(key, attrs[key]);
+	});
+}
+
+function addStyle (obj, options) {
+	var style, update, remove, result;
+
+	// If a transform function was defined, run it on the css
+	if (options.transform && obj.css) {
+	    result = options.transform(obj.css);
+
+	    if (result) {
+	    	// If transform returns a value, use that instead of the original css.
+	    	// This allows running runtime transformations on the css.
+	    	obj.css = result;
+	    } else {
+	    	// If the transform function returns a falsy value, don't add this css.
+	    	// This allows conditional loading of css
+	    	return function() {
+	    		// noop
+	    	};
+	    }
+	}
+
+	if (options.singleton) {
+		var styleIndex = singletonCounter++;
+
+		style = singleton || (singleton = createStyleElement(options));
+
+		update = applyToSingletonTag.bind(null, style, styleIndex, false);
+		remove = applyToSingletonTag.bind(null, style, styleIndex, true);
+
+	} else if (
+		obj.sourceMap &&
+		typeof URL === "function" &&
+		typeof URL.createObjectURL === "function" &&
+		typeof URL.revokeObjectURL === "function" &&
+		typeof Blob === "function" &&
+		typeof btoa === "function"
+	) {
+		style = createLinkElement(options);
+		update = updateLink.bind(null, style, options);
+		remove = function () {
+			removeStyleElement(style);
+
+			if(style.href) URL.revokeObjectURL(style.href);
+		};
+	} else {
+		style = createStyleElement(options);
+		update = applyToTag.bind(null, style);
+		remove = function () {
+			removeStyleElement(style);
+		};
+	}
+
+	update(obj);
+
+	return function updateStyle (newObj) {
+		if (newObj) {
+			if (
+				newObj.css === obj.css &&
+				newObj.media === obj.media &&
+				newObj.sourceMap === obj.sourceMap
+			) {
+				return;
+			}
+
+			update(obj = newObj);
+		} else {
+			remove();
+		}
+	};
+}
+
+var replaceText = (function () {
+	var textStore = [];
+
+	return function (index, replacement) {
+		textStore[index] = replacement;
+
+		return textStore.filter(Boolean).join('\n');
+	};
+})();
+
+function applyToSingletonTag (style, index, remove, obj) {
+	var css = remove ? "" : obj.css;
+
+	if (style.styleSheet) {
+		style.styleSheet.cssText = replaceText(index, css);
+	} else {
+		var cssNode = document.createTextNode(css);
+		var childNodes = style.childNodes;
+
+		if (childNodes[index]) style.removeChild(childNodes[index]);
+
+		if (childNodes.length) {
+			style.insertBefore(cssNode, childNodes[index]);
+		} else {
+			style.appendChild(cssNode);
+		}
+	}
+}
+
+function applyToTag (style, obj) {
+	var css = obj.css;
+	var media = obj.media;
+
+	if(media) {
+		style.setAttribute("media", media)
+	}
+
+	if(style.styleSheet) {
+		style.styleSheet.cssText = css;
+	} else {
+		while(style.firstChild) {
+			style.removeChild(style.firstChild);
+		}
+
+		style.appendChild(document.createTextNode(css));
+	}
+}
+
+function updateLink (link, options, obj) {
+	var css = obj.css;
+	var sourceMap = obj.sourceMap;
+
+	/*
+		If convertToAbsoluteUrls isn't defined, but sourcemaps are enabled
+		and there is no publicPath defined then lets turn convertToAbsoluteUrls
+		on by default.  Otherwise default to the convertToAbsoluteUrls option
+		directly
+	*/
+	var autoFixUrls = options.convertToAbsoluteUrls === undefined && sourceMap;
+
+	if (options.convertToAbsoluteUrls || autoFixUrls) {
+		css = fixUrls(css);
+	}
+
+	if (sourceMap) {
+		// http://stackoverflow.com/a/26603875
+		css += "\n/*# sourceMappingURL=data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap)))) + " */";
+	}
+
+	var blob = new Blob([css], { type: "text/css" });
+
+	var oldSrc = link.href;
+
+	link.href = URL.createObjectURL(blob);
+
+	if(oldSrc) URL.revokeObjectURL(oldSrc);
+}
+
+
+/***/ }),
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -647,482 +1101,17 @@ function shouldUseCssText() {
 }
 
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(72)))
-
-/***/ }),
-/* 6 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var mergeStyles_1 = __webpack_require__(86);
-exports.mergeStyles = mergeStyles_1.mergeStyles;
-var mergeStyleSets_1 = __webpack_require__(92);
-exports.mergeStyleSets = mergeStyleSets_1.mergeStyleSets;
-var concatStyleSets_1 = __webpack_require__(40);
-exports.concatStyleSets = concatStyleSets_1.concatStyleSets;
-var fontFace_1 = __webpack_require__(93);
-exports.fontFace = fontFace_1.fontFace;
-var keyframes_1 = __webpack_require__(94);
-exports.keyframes = keyframes_1.keyframes;
-var Stylesheet_1 = __webpack_require__(13);
-exports.InjectionMode = Stylesheet_1.InjectionMode;
-exports.Stylesheet = Stylesheet_1.Stylesheet;
-
-
-/***/ }),
-/* 7 */
-/***/ (function(module, exports) {
-
-/*
-	MIT License http://www.opensource.org/licenses/mit-license.php
-	Author Tobias Koppers @sokra
-*/
-// css base code, injected by the css-loader
-module.exports = function(useSourceMap) {
-	var list = [];
-
-	// return the list of modules as css string
-	list.toString = function toString() {
-		return this.map(function (item) {
-			var content = cssWithMappingToString(item, useSourceMap);
-			if(item[2]) {
-				return "@media " + item[2] + "{" + content + "}";
-			} else {
-				return content;
-			}
-		}).join("");
-	};
-
-	// import a list of modules into the list
-	list.i = function(modules, mediaQuery) {
-		if(typeof modules === "string")
-			modules = [[null, modules, ""]];
-		var alreadyImportedModules = {};
-		for(var i = 0; i < this.length; i++) {
-			var id = this[i][0];
-			if(typeof id === "number")
-				alreadyImportedModules[id] = true;
-		}
-		for(i = 0; i < modules.length; i++) {
-			var item = modules[i];
-			// skip already imported module
-			// this implementation is not 100% perfect for weird media query combinations
-			//  when a module is imported multiple times with different media queries.
-			//  I hope this will never occur (Hey this way we have smaller bundles)
-			if(typeof item[0] !== "number" || !alreadyImportedModules[item[0]]) {
-				if(mediaQuery && !item[2]) {
-					item[2] = mediaQuery;
-				} else if(mediaQuery) {
-					item[2] = "(" + item[2] + ") and (" + mediaQuery + ")";
-				}
-				list.push(item);
-			}
-		}
-	};
-	return list;
-};
-
-function cssWithMappingToString(item, useSourceMap) {
-	var content = item[1] || '';
-	var cssMapping = item[3];
-	if (!cssMapping) {
-		return content;
-	}
-
-	if (useSourceMap && typeof btoa === 'function') {
-		var sourceMapping = toComment(cssMapping);
-		var sourceURLs = cssMapping.sources.map(function (source) {
-			return '/*# sourceURL=' + cssMapping.sourceRoot + source + ' */'
-		});
-
-		return [content].concat(sourceURLs).concat([sourceMapping]).join('\n');
-	}
-
-	return [content].join('\n');
-}
-
-// Adapted from convert-source-map (MIT)
-function toComment(sourceMap) {
-	// eslint-disable-next-line no-undef
-	var base64 = btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap))));
-	var data = 'sourceMappingURL=data:application/json;charset=utf-8;base64,' + base64;
-
-	return '/*# ' + data + ' */';
-}
-
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(78)))
 
 /***/ }),
 /* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
-/*
-	MIT License http://www.opensource.org/licenses/mit-license.php
-	Author Tobias Koppers @sokra
-*/
-
-var stylesInDom = {};
-
-var	memoize = function (fn) {
-	var memo;
-
-	return function () {
-		if (typeof memo === "undefined") memo = fn.apply(this, arguments);
-		return memo;
-	};
-};
-
-var isOldIE = memoize(function () {
-	// Test for IE <= 9 as proposed by Browserhacks
-	// @see http://browserhacks.com/#hack-e71d8692f65334173fee715c222cb805
-	// Tests for existence of standard globals is to allow style-loader
-	// to operate correctly into non-standard environments
-	// @see https://github.com/webpack-contrib/style-loader/issues/177
-	return window && document && document.all && !window.atob;
-});
-
-var getElement = (function (fn) {
-	var memo = {};
-
-	return function(selector) {
-		if (typeof memo[selector] === "undefined") {
-			var styleTarget = fn.call(this, selector);
-			// Special case to return head of iframe instead of iframe itself
-			if (styleTarget instanceof window.HTMLIFrameElement) {
-				try {
-					// This will throw an exception if access to iframe is blocked
-					// due to cross-origin restrictions
-					styleTarget = styleTarget.contentDocument.head;
-				} catch(e) {
-					styleTarget = null;
-				}
-			}
-			memo[selector] = styleTarget;
-		}
-		return memo[selector]
-	};
-})(function (target) {
-	return document.querySelector(target)
-});
-
-var singleton = null;
-var	singletonCounter = 0;
-var	stylesInsertedAtTop = [];
-
-var	fixUrls = __webpack_require__(188);
-
-module.exports = function(list, options) {
-	if (typeof DEBUG !== "undefined" && DEBUG) {
-		if (typeof document !== "object") throw new Error("The style-loader cannot be used in a non-browser environment");
-	}
-
-	options = options || {};
-
-	options.attrs = typeof options.attrs === "object" ? options.attrs : {};
-
-	// Force single-tag solution on IE6-9, which has a hard limit on the # of <style>
-	// tags it will allow on a page
-	if (!options.singleton && typeof options.singleton !== "boolean") options.singleton = isOldIE();
-
-	// By default, add <style> tags to the <head> element
-	if (!options.insertInto) options.insertInto = "head";
-
-	// By default, add <style> tags to the bottom of the target
-	if (!options.insertAt) options.insertAt = "bottom";
-
-	var styles = listToStyles(list, options);
-
-	addStylesToDom(styles, options);
-
-	return function update (newList) {
-		var mayRemove = [];
-
-		for (var i = 0; i < styles.length; i++) {
-			var item = styles[i];
-			var domStyle = stylesInDom[item.id];
-
-			domStyle.refs--;
-			mayRemove.push(domStyle);
-		}
-
-		if(newList) {
-			var newStyles = listToStyles(newList, options);
-			addStylesToDom(newStyles, options);
-		}
-
-		for (var i = 0; i < mayRemove.length; i++) {
-			var domStyle = mayRemove[i];
-
-			if(domStyle.refs === 0) {
-				for (var j = 0; j < domStyle.parts.length; j++) domStyle.parts[j]();
-
-				delete stylesInDom[domStyle.id];
-			}
-		}
-	};
-};
-
-function addStylesToDom (styles, options) {
-	for (var i = 0; i < styles.length; i++) {
-		var item = styles[i];
-		var domStyle = stylesInDom[item.id];
-
-		if(domStyle) {
-			domStyle.refs++;
-
-			for(var j = 0; j < domStyle.parts.length; j++) {
-				domStyle.parts[j](item.parts[j]);
-			}
-
-			for(; j < item.parts.length; j++) {
-				domStyle.parts.push(addStyle(item.parts[j], options));
-			}
-		} else {
-			var parts = [];
-
-			for(var j = 0; j < item.parts.length; j++) {
-				parts.push(addStyle(item.parts[j], options));
-			}
-
-			stylesInDom[item.id] = {id: item.id, refs: 1, parts: parts};
-		}
-	}
-}
-
-function listToStyles (list, options) {
-	var styles = [];
-	var newStyles = {};
-
-	for (var i = 0; i < list.length; i++) {
-		var item = list[i];
-		var id = options.base ? item[0] + options.base : item[0];
-		var css = item[1];
-		var media = item[2];
-		var sourceMap = item[3];
-		var part = {css: css, media: media, sourceMap: sourceMap};
-
-		if(!newStyles[id]) styles.push(newStyles[id] = {id: id, parts: [part]});
-		else newStyles[id].parts.push(part);
-	}
-
-	return styles;
-}
-
-function insertStyleElement (options, style) {
-	var target = getElement(options.insertInto)
-
-	if (!target) {
-		throw new Error("Couldn't find a style target. This probably means that the value for the 'insertInto' parameter is invalid.");
-	}
-
-	var lastStyleElementInsertedAtTop = stylesInsertedAtTop[stylesInsertedAtTop.length - 1];
-
-	if (options.insertAt === "top") {
-		if (!lastStyleElementInsertedAtTop) {
-			target.insertBefore(style, target.firstChild);
-		} else if (lastStyleElementInsertedAtTop.nextSibling) {
-			target.insertBefore(style, lastStyleElementInsertedAtTop.nextSibling);
-		} else {
-			target.appendChild(style);
-		}
-		stylesInsertedAtTop.push(style);
-	} else if (options.insertAt === "bottom") {
-		target.appendChild(style);
-	} else if (typeof options.insertAt === "object" && options.insertAt.before) {
-		var nextSibling = getElement(options.insertInto + " " + options.insertAt.before);
-		target.insertBefore(style, nextSibling);
-	} else {
-		throw new Error("[Style Loader]\n\n Invalid value for parameter 'insertAt' ('options.insertAt') found.\n Must be 'top', 'bottom', or Object.\n (https://github.com/webpack-contrib/style-loader#insertat)\n");
-	}
-}
-
-function removeStyleElement (style) {
-	if (style.parentNode === null) return false;
-	style.parentNode.removeChild(style);
-
-	var idx = stylesInsertedAtTop.indexOf(style);
-	if(idx >= 0) {
-		stylesInsertedAtTop.splice(idx, 1);
-	}
-}
-
-function createStyleElement (options) {
-	var style = document.createElement("style");
-
-	options.attrs.type = "text/css";
-
-	addAttrs(style, options.attrs);
-	insertStyleElement(options, style);
-
-	return style;
-}
-
-function createLinkElement (options) {
-	var link = document.createElement("link");
-
-	options.attrs.type = "text/css";
-	options.attrs.rel = "stylesheet";
-
-	addAttrs(link, options.attrs);
-	insertStyleElement(options, link);
-
-	return link;
-}
-
-function addAttrs (el, attrs) {
-	Object.keys(attrs).forEach(function (key) {
-		el.setAttribute(key, attrs[key]);
-	});
-}
-
-function addStyle (obj, options) {
-	var style, update, remove, result;
-
-	// If a transform function was defined, run it on the css
-	if (options.transform && obj.css) {
-	    result = options.transform(obj.css);
-
-	    if (result) {
-	    	// If transform returns a value, use that instead of the original css.
-	    	// This allows running runtime transformations on the css.
-	    	obj.css = result;
-	    } else {
-	    	// If the transform function returns a falsy value, don't add this css.
-	    	// This allows conditional loading of css
-	    	return function() {
-	    		// noop
-	    	};
-	    }
-	}
-
-	if (options.singleton) {
-		var styleIndex = singletonCounter++;
-
-		style = singleton || (singleton = createStyleElement(options));
-
-		update = applyToSingletonTag.bind(null, style, styleIndex, false);
-		remove = applyToSingletonTag.bind(null, style, styleIndex, true);
-
-	} else if (
-		obj.sourceMap &&
-		typeof URL === "function" &&
-		typeof URL.createObjectURL === "function" &&
-		typeof URL.revokeObjectURL === "function" &&
-		typeof Blob === "function" &&
-		typeof btoa === "function"
-	) {
-		style = createLinkElement(options);
-		update = updateLink.bind(null, style, options);
-		remove = function () {
-			removeStyleElement(style);
-
-			if(style.href) URL.revokeObjectURL(style.href);
-		};
-	} else {
-		style = createStyleElement(options);
-		update = applyToTag.bind(null, style);
-		remove = function () {
-			removeStyleElement(style);
-		};
-	}
-
-	update(obj);
-
-	return function updateStyle (newObj) {
-		if (newObj) {
-			if (
-				newObj.css === obj.css &&
-				newObj.media === obj.media &&
-				newObj.sourceMap === obj.sourceMap
-			) {
-				return;
-			}
-
-			update(obj = newObj);
-		} else {
-			remove();
-		}
-	};
-}
-
-var replaceText = (function () {
-	var textStore = [];
-
-	return function (index, replacement) {
-		textStore[index] = replacement;
-
-		return textStore.filter(Boolean).join('\n');
-	};
-})();
-
-function applyToSingletonTag (style, index, remove, obj) {
-	var css = remove ? "" : obj.css;
-
-	if (style.styleSheet) {
-		style.styleSheet.cssText = replaceText(index, css);
-	} else {
-		var cssNode = document.createTextNode(css);
-		var childNodes = style.childNodes;
-
-		if (childNodes[index]) style.removeChild(childNodes[index]);
-
-		if (childNodes.length) {
-			style.insertBefore(cssNode, childNodes[index]);
-		} else {
-			style.appendChild(cssNode);
-		}
-	}
-}
-
-function applyToTag (style, obj) {
-	var css = obj.css;
-	var media = obj.media;
-
-	if(media) {
-		style.setAttribute("media", media)
-	}
-
-	if(style.styleSheet) {
-		style.styleSheet.cssText = css;
-	} else {
-		while(style.firstChild) {
-			style.removeChild(style.firstChild);
-		}
-
-		style.appendChild(document.createTextNode(css));
-	}
-}
-
-function updateLink (link, options, obj) {
-	var css = obj.css;
-	var sourceMap = obj.sourceMap;
-
-	/*
-		If convertToAbsoluteUrls isn't defined, but sourcemaps are enabled
-		and there is no publicPath defined then lets turn convertToAbsoluteUrls
-		on by default.  Otherwise default to the convertToAbsoluteUrls option
-		directly
-	*/
-	var autoFixUrls = options.convertToAbsoluteUrls === undefined && sourceMap;
-
-	if (options.convertToAbsoluteUrls || autoFixUrls) {
-		css = fixUrls(css);
-	}
-
-	if (sourceMap) {
-		// http://stackoverflow.com/a/26603875
-		css += "\n/*# sourceMappingURL=data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap)))) + " */";
-	}
-
-	var blob = new Blob([css], { type: "text/css" });
-
-	var oldSrc = link.href;
-
-	link.href = URL.createObjectURL(blob);
-
-	if(oldSrc) URL.revokeObjectURL(oldSrc);
-}
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+tslib_1.__exportStar(__webpack_require__(116), exports);
 
 
 /***/ }),
@@ -1132,13 +1121,46 @@ function updateLink (link, options, obj) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
+var mergeStyles_1 = __webpack_require__(92);
+exports.mergeStyles = mergeStyles_1.mergeStyles;
+var mergeStyleSets_1 = __webpack_require__(98);
+exports.mergeStyleSets = mergeStyleSets_1.mergeStyleSets;
+var concatStyleSets_1 = __webpack_require__(44);
+exports.concatStyleSets = concatStyleSets_1.concatStyleSets;
+var fontFace_1 = __webpack_require__(99);
+exports.fontFace = fontFace_1.fontFace;
+var keyframes_1 = __webpack_require__(100);
+exports.keyframes = keyframes_1.keyframes;
+var Stylesheet_1 = __webpack_require__(15);
+exports.InjectionMode = Stylesheet_1.InjectionMode;
+exports.Stylesheet = Stylesheet_1.Stylesheet;
+
+
+/***/ }),
+/* 10 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var Utilities_1 = __webpack_require__(1);
-var Icon_1 = __webpack_require__(14);
-var ContextualMenu_1 = __webpack_require__(126);
-var BaseButton_classNames_1 = __webpack_require__(156);
-var SplitButton_classNames_1 = __webpack_require__(157);
+tslib_1.__exportStar(__webpack_require__(197), exports);
+
+
+/***/ }),
+/* 11 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+var React = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
+var Icon_1 = __webpack_require__(8);
+var ContextualMenu_1 = __webpack_require__(132);
+var BaseButton_classNames_1 = __webpack_require__(161);
+var SplitButton_classNames_1 = __webpack_require__(162);
 var BaseButton = /** @class */ (function (_super) {
     tslib_1.__extends(BaseButton, _super);
     function BaseButton(props, rootClassName) {
@@ -1438,7 +1460,7 @@ exports.BaseButton = BaseButton;
 
 
 /***/ }),
-/* 10 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1631,7 +1653,7 @@ function isVirtualElement(element) {
 
 
 /***/ }),
-/* 11 */
+/* 13 */
 /***/ (function(module, exports) {
 
 // shim for using process in browser
@@ -1821,13 +1843,13 @@ process.umask = function() { return 0; };
 
 
 /***/ }),
-/* 12 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Utilities_1 = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
 var Styling_1 = __webpack_require__(3);
 var noOutline = {
     outline: 0
@@ -1911,7 +1933,7 @@ exports.getStyles = Utilities_1.memoizeFunction(function (theme) {
 
 
 /***/ }),
-/* 13 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2087,29 +2109,76 @@ function _createStyleElement(content) {
 
 
 /***/ }),
-/* 14 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(110), exports);
-
-
-/***/ }),
-/* 15 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(68), exports);
-
-
-/***/ }),
 /* 16 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * The days of the week
+ */
+var DayOfWeek;
+(function (DayOfWeek) {
+    DayOfWeek[DayOfWeek["Sunday"] = 0] = "Sunday";
+    DayOfWeek[DayOfWeek["Monday"] = 1] = "Monday";
+    DayOfWeek[DayOfWeek["Tuesday"] = 2] = "Tuesday";
+    DayOfWeek[DayOfWeek["Wednesday"] = 3] = "Wednesday";
+    DayOfWeek[DayOfWeek["Thursday"] = 4] = "Thursday";
+    DayOfWeek[DayOfWeek["Friday"] = 5] = "Friday";
+    DayOfWeek[DayOfWeek["Saturday"] = 6] = "Saturday";
+})(DayOfWeek = exports.DayOfWeek || (exports.DayOfWeek = {}));
+/**
+ * The months
+ */
+var MonthOfYear;
+(function (MonthOfYear) {
+    MonthOfYear[MonthOfYear["January"] = 0] = "January";
+    MonthOfYear[MonthOfYear["February"] = 1] = "February";
+    MonthOfYear[MonthOfYear["March"] = 2] = "March";
+    MonthOfYear[MonthOfYear["April"] = 3] = "April";
+    MonthOfYear[MonthOfYear["May"] = 4] = "May";
+    MonthOfYear[MonthOfYear["June"] = 5] = "June";
+    MonthOfYear[MonthOfYear["July"] = 6] = "July";
+    MonthOfYear[MonthOfYear["August"] = 7] = "August";
+    MonthOfYear[MonthOfYear["September"] = 8] = "September";
+    MonthOfYear[MonthOfYear["October"] = 9] = "October";
+    MonthOfYear[MonthOfYear["November"] = 10] = "November";
+    MonthOfYear[MonthOfYear["December"] = 11] = "December";
+})(MonthOfYear = exports.MonthOfYear || (exports.MonthOfYear = {}));
+/**
+ * First week of the year settings types
+ */
+var FirstWeekOfYear;
+(function (FirstWeekOfYear) {
+    FirstWeekOfYear[FirstWeekOfYear["FirstDay"] = 0] = "FirstDay";
+    FirstWeekOfYear[FirstWeekOfYear["FirstFullWeek"] = 1] = "FirstFullWeek";
+    FirstWeekOfYear[FirstWeekOfYear["FirstFourDayWeek"] = 2] = "FirstFourDayWeek";
+})(FirstWeekOfYear = exports.FirstWeekOfYear || (exports.FirstWeekOfYear = {}));
+/**
+ * The supported date range types
+ */
+var DateRangeType;
+(function (DateRangeType) {
+    DateRangeType[DateRangeType["Day"] = 0] = "Day";
+    DateRangeType[DateRangeType["Week"] = 1] = "Week";
+    DateRangeType[DateRangeType["Month"] = 2] = "Month";
+})(DateRangeType = exports.DateRangeType || (exports.DateRangeType = {}));
+
+
+/***/ }),
+/* 17 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+tslib_1.__exportStar(__webpack_require__(74), exports);
+
+
+/***/ }),
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2373,17 +2442,17 @@ exports.EventGroup = EventGroup;
 
 
 /***/ }),
-/* 17 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Stylesheet_1 = __webpack_require__(13);
-var kebabRules_1 = __webpack_require__(87);
-var prefixRules_1 = __webpack_require__(88);
-var provideUnits_1 = __webpack_require__(90);
-var rtlifyRules_1 = __webpack_require__(91);
+var Stylesheet_1 = __webpack_require__(15);
+var kebabRules_1 = __webpack_require__(93);
+var prefixRules_1 = __webpack_require__(94);
+var provideUnits_1 = __webpack_require__(96);
+var rtlifyRules_1 = __webpack_require__(97);
 var DISPLAY_NAME = 'displayName';
 function getDisplayName(rules) {
     var rootStyle = rules && rules['&'];
@@ -2568,54 +2637,65 @@ exports.styleToClassName = styleToClassName;
 
 
 /***/ }),
-/* 18 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var AnimationStyles_1 = __webpack_require__(116);
+var AnimationStyles_1 = __webpack_require__(122);
 exports.AnimationStyles = AnimationStyles_1.AnimationStyles;
 exports.AnimationVariables = AnimationStyles_1.AnimationVariables;
-var DefaultPalette_1 = __webpack_require__(28);
+var DefaultPalette_1 = __webpack_require__(32);
 exports.DefaultPalette = DefaultPalette_1.DefaultPalette;
-var DefaultFontStyles_1 = __webpack_require__(48);
+var DefaultFontStyles_1 = __webpack_require__(52);
 exports.DefaultFontStyles = DefaultFontStyles_1.DefaultFontStyles;
 exports.registerDefaultFontFaces = DefaultFontStyles_1.registerDefaultFontFaces;
-var fonts_1 = __webpack_require__(49);
+var fonts_1 = __webpack_require__(53);
 exports.FontSizes = fonts_1.FontSizes;
 exports.FontWeights = fonts_1.FontWeights;
 exports.IconFontSizes = fonts_1.IconFontSizes;
 exports.createFontStyles = fonts_1.createFontStyles;
-var getFocusStyle_1 = __webpack_require__(117);
+var getFocusStyle_1 = __webpack_require__(123);
 exports.getFocusStyle = getFocusStyle_1.getFocusStyle;
-var hiddenContentStyle_1 = __webpack_require__(118);
+var hiddenContentStyle_1 = __webpack_require__(124);
 exports.hiddenContentStyle = hiddenContentStyle_1.hiddenContentStyle;
-var theme_1 = __webpack_require__(119);
+var theme_1 = __webpack_require__(125);
 exports.ThemeSettingName = theme_1.ThemeSettingName;
 exports.getTheme = theme_1.getTheme;
 exports.loadTheme = theme_1.loadTheme;
 exports.createTheme = theme_1.createTheme;
 exports.registerOnThemeChangeCallback = theme_1.registerOnThemeChangeCallback;
 exports.removeOnThemeChangeCallback = theme_1.removeOnThemeChangeCallback;
-tslib_1.__exportStar(__webpack_require__(120), exports);
-var GeneralStyles_1 = __webpack_require__(121);
+tslib_1.__exportStar(__webpack_require__(126), exports);
+var GeneralStyles_1 = __webpack_require__(127);
 exports.normalize = GeneralStyles_1.normalize;
 
 
 /***/ }),
-/* 19 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var BaseButton_1 = __webpack_require__(9);
-var Utilities_1 = __webpack_require__(1);
-var DefaultButton_styles_1 = __webpack_require__(159);
+tslib_1.__exportStar(__webpack_require__(135), exports);
+
+
+/***/ }),
+/* 22 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+var React = __webpack_require__(1);
+var BaseButton_1 = __webpack_require__(11);
+var Utilities_1 = __webpack_require__(2);
+var DefaultButton_styles_1 = __webpack_require__(164);
 var DefaultButton = /** @class */ (function (_super) {
     tslib_1.__extends(DefaultButton, _super);
     function DefaultButton() {
@@ -2639,14 +2719,14 @@ exports.DefaultButton = DefaultButton;
 
 
 /***/ }),
-/* 20 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var Styling_1 = __webpack_require__(3);
-var Utilities_1 = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
 exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles) {
     var splitButtonStyles = {
         splitButtonContainer: {
@@ -2705,7 +2785,372 @@ exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles) {
 
 
 /***/ }),
-/* 21 */
+/* 24 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var DateValues_1 = __webpack_require__(16);
+var TimeConstants_1 = __webpack_require__(235);
+var Utilities_1 = __webpack_require__(2);
+/**
+ * Returns a date offset from the given date by the specified number of days.
+ * @param {Date} date - The origin date
+ * @param {number} days - The number of days to offset. 'days' can be negative.
+ * @return {Date} A new Date object offset from the origin date by the given number of days
+ */
+function addDays(date, days) {
+    var result = new Date(date.getTime());
+    result.setDate(result.getDate() + days);
+    return result;
+}
+exports.addDays = addDays;
+/**
+ * Returns a date offset from the given date by the specified number of weeks.
+ * @param {Date} date - The origin date
+ * @param {number} weeks - The number of weeks to offset. 'weeks' can be negative.
+ * @return {Date} A new Date object offset from the origin date by the given number of weeks
+ */
+function addWeeks(date, weeks) {
+    return addDays(date, weeks * TimeConstants_1.default.DaysInOneWeek);
+}
+exports.addWeeks = addWeeks;
+/**
+ * Returns a date offset from the given date by the specified number of months.
+ * The method tries to preserve the day-of-month; however, if the new month does not have enough days
+ * to contain the original day-of-month, we'll use the last day of the new month.
+ * @param {Date} date - The origin date
+ * @param {number} months - The number of months to offset. 'months' can be negative.
+ * @return {Date} A new Date object offset from the origin date by the given number of months
+ */
+function addMonths(date, months) {
+    var result = new Date(date.getTime());
+    var newMonth = result.getMonth() + months;
+    result.setMonth(newMonth);
+    // We want to maintain the same day-of-month, but that may not be possible if the new month doesn't have enough days.
+    // Loop until we back up to a day the new month has.
+    // (Weird modulo math is due to Javascript's treatment of negative numbers in modulo)
+    if (result.getMonth() !== (newMonth % TimeConstants_1.default.MonthInOneYear + TimeConstants_1.default.MonthInOneYear) % TimeConstants_1.default.MonthInOneYear) {
+        result = addDays(result, -result.getDate());
+    }
+    return result;
+}
+exports.addMonths = addMonths;
+/**
+ * Returns a date offset from the given date by the specified number of years.
+ * The method tries to preserve the day-of-month; however, if the new month does not have enough days
+ * to contain the original day-of-month, we'll use the last day of the new month.
+ * @param {Date} date - The origin date
+ * @param {number} years - The number of years to offset. 'years' can be negative.
+ * @return {Date} A new Date object offset from the origin date by the given number of years
+ */
+function addYears(date, years) {
+    var result = new Date(date.getTime());
+    result.setFullYear(date.getFullYear() + years);
+    // We want to maintain the same day-of-month, but that may not be possible if the new month doesn't have enough days.
+    // Loop until we back up to a day the new month has.
+    // (Weird modulo math is due to Javascript's treatment of negative numbers in modulo)
+    if (result.getMonth() !== (date.getMonth() % TimeConstants_1.default.MonthInOneYear + TimeConstants_1.default.MonthInOneYear) % TimeConstants_1.default.MonthInOneYear) {
+        result = addDays(result, -result.getDate());
+    }
+    return result;
+}
+exports.addYears = addYears;
+/**
+ * Returns a date that is the first day of the month of the provided date.
+ * @param {Date} date - The origin date
+ * @return {Date} A new Date object with the day set to the first day of the month.
+ */
+function getMonthStart(date) {
+    return new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0);
+}
+exports.getMonthStart = getMonthStart;
+/**
+ * Returns a date that is the last day of the month of the provided date.
+ * @param {Date} date - The origin date
+ * @return {Date} A new Date object with the day set to the last day of the month.
+ */
+function getMonthEnd(date) {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0, 0, 0, 0, 0);
+}
+exports.getMonthEnd = getMonthEnd;
+/**
+ * Returns a date that is the first day of the year of the provided date.
+ * @param {Date} date - The origin date
+ * @return {Date} A new Date object with the day set to the first day of the year.
+ */
+function getYearStart(date) {
+    return new Date(date.getFullYear(), 0, 1, 0, 0, 0, 0);
+}
+exports.getYearStart = getYearStart;
+/**
+ * Returns a date that is the last day of the year of the provided date.
+ * @param {Date} date - The origin date
+ * @return {Date} A new Date object with the day set to the last day of the year.
+ */
+function getYearEnd(date) {
+    return new Date(date.getFullYear() + 1, 0, 0, 0, 0, 0, 0);
+}
+exports.getYearEnd = getYearEnd;
+/**
+ * Returns a date that is a copy of the given date, aside from the month changing to the given month.
+ *  The method tries to preserve the day-of-month; however, if the new month does not have enough days
+ * to contain the original day-of-month, we'll use the last day of the new month.
+ * @param {Date} date - The origin date
+ * @param {number} month - The 0-based index of the month to set on the date.
+ * @return {Date} A new Date object with the given month set.
+ */
+function setMonth(date, month) {
+    return addMonths(date, month - date.getMonth());
+}
+exports.setMonth = setMonth;
+/**
+ * Compares two dates, and returns true if the two dates (not accounting for time-of-day) are equal.
+ * @return {boolean} True if the two dates represent the same date (regardless of time-of-day), false otherwise.
+ */
+function compareDates(date1, date2) {
+    if (!date1 && !date2) {
+        return true;
+    }
+    else if (!date1 || !date2) {
+        return false;
+    }
+    else {
+        return (date1.getFullYear() === date2.getFullYear()
+            && date1.getMonth() === date2.getMonth()
+            && date1.getDate() === date2.getDate());
+    }
+}
+exports.compareDates = compareDates;
+/**
+ * Compare the date parts of two dates
+ * @param {Date} date1 - The first date to compare
+ * @param {Date} date2 - The second date to compare
+ * @returns {Number} A negative value if date1 is earlier than date2, 0 if the dates are equal, or a positive value
+ * if date1 is later than date2.
+ */
+function compareDatePart(date1, date2) {
+    return getDatePartHashValue(date1) - getDatePartHashValue(date2);
+}
+exports.compareDatePart = compareDatePart;
+/**
+ * Gets the date range array including the specified date. The date range array is calculated as the list
+ * of dates accounting for the specified first day of the week and date range type.
+ * @param {Date} date - The input date
+ * @param {DateRangeType} dateRangeType - The desired date range type, i.e., day, week, month, etc.
+ * @param {DayOfWeek} dayOfWeek - The first day of the week.
+ * @returns {Date[]} An array of dates representing the date range containing the specified date.
+ */
+function getDateRangeArray(date, dateRangeType, firstDayOfWeek) {
+    var datesArray = new Array();
+    var startDate;
+    var endDate = null;
+    switch (dateRangeType) {
+        case DateValues_1.DateRangeType.Day:
+            startDate = getDatePart(date);
+            endDate = addDays(startDate, 1);
+            break;
+        case DateValues_1.DateRangeType.Week:
+            startDate = getStartDateOfWeek(getDatePart(date), firstDayOfWeek);
+            endDate = addDays(startDate, TimeConstants_1.default.DaysInOneWeek);
+            break;
+        case DateValues_1.DateRangeType.Month:
+            startDate = new Date(date.getFullYear(), date.getMonth(), 1);
+            endDate = addMonths(startDate, 1);
+            break;
+        default:
+            return Utilities_1.assertNever(dateRangeType);
+    }
+    // Populate the dates array with the dates in range
+    datesArray.push(startDate);
+    var nextDate = addDays(startDate, 1);
+    while (!compareDates(nextDate, endDate)) {
+        datesArray.push(nextDate);
+        nextDate = addDays(nextDate, 1);
+    }
+    return datesArray;
+}
+exports.getDateRangeArray = getDateRangeArray;
+/**
+ * Checks whether the specified date is in the given date range.
+ * @param {Date} date - The origin date
+ * @param {Date[]} dateRange - An array of dates to do the lookup on
+ * @returns {bool} True if the date matches one of the dates in the specified array, false otherwise.
+ */
+function isInDateRangeArray(date, dateRange) {
+    for (var _i = 0, dateRange_1 = dateRange; _i < dateRange_1.length; _i++) {
+        var dateInRange = dateRange_1[_i];
+        if (compareDates(date, dateInRange)) {
+            return true;
+        }
+    }
+    return false;
+}
+exports.isInDateRangeArray = isInDateRangeArray;
+/**
+ * Returns the week number for a date.
+ * Week numbers are 1 - 52 (53) in a year
+ * @param {navigatedDate} Date - A date to find the week number for.
+ * @param {firstDayOfWeek} DayOfWeek - The first day of the week (0-6, Sunday = 0)
+ * @param {firstWeekOfYear} FirstWeekOfYear - The first week of the year (1-2)
+ * @return {weeksArray} The weeks number array for the current month.
+ */
+function getWeekNumbersInMonth(weeksInMonth, firstDayOfWeek, firstWeekOfYear, navigatedDate) {
+    var selectedYear = navigatedDate.getFullYear();
+    var selectedMonth = navigatedDate.getMonth();
+    var dayOfMonth = 1;
+    var fistDayOfMonth = new Date(selectedYear, selectedMonth, dayOfMonth);
+    var endOfFirstWeek = dayOfMonth
+        + (firstDayOfWeek + TimeConstants_1.default.DaysInOneWeek - 1)
+        - adjustWeekDay(firstDayOfWeek, fistDayOfMonth.getDay());
+    var endOfWeekRange = new Date(selectedYear, selectedMonth, endOfFirstWeek);
+    dayOfMonth = endOfWeekRange.getDate();
+    var weeksArray = [];
+    for (var i = 0; i < weeksInMonth; i++) {
+        // Get week number for end of week
+        weeksArray.push(getWeekNumber(endOfWeekRange, firstDayOfWeek, firstWeekOfYear));
+        dayOfMonth += TimeConstants_1.default.DaysInOneWeek;
+        endOfWeekRange = new Date(selectedYear, selectedMonth, dayOfMonth);
+    }
+    return weeksArray;
+}
+exports.getWeekNumbersInMonth = getWeekNumbersInMonth;
+/**
+ * Returns the week number for a date.
+ * Week numbers are 1 - 52 (53) in a year
+ * @param {Date} date - A date to find the week number for.
+ * @param {DayOfWeek} firstDayOfWeek - The first day of the week (0-6, Sunday = 0)
+ * @param {firstWeekOfYear} firstWeekOfYear - The first week of the year (1-2)
+ * @return {Number} The week's number in the year.
+ */
+function getWeekNumber(date, firstDayOfWeek, firstWeekOfYear) {
+    // First four-day week of the year - minumum days count
+    var fourDayWeek = 4;
+    switch (firstWeekOfYear) {
+        case DateValues_1.FirstWeekOfYear.FirstFullWeek:
+            return getWeekOfYearFullDays(date, firstDayOfWeek, TimeConstants_1.default.DaysInOneWeek);
+        case DateValues_1.FirstWeekOfYear.FirstFourDayWeek:
+            return getWeekOfYearFullDays(date, firstDayOfWeek, fourDayWeek);
+        default:
+            return getFirstDayWeekOfYear(date, firstDayOfWeek);
+    }
+}
+exports.getWeekNumber = getWeekNumber;
+/**
+ * Gets a new date with the time portion zeroed out, i.e., set to midnight
+ * @param {Date} date - The origin date
+ * @returns {Date} A new date with the time set to midnight
+ */
+function getDatePart(date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+/**
+ * Gets the date for the first day of the week based on the given date assuming
+ * the specified first day of the week.
+ * @param {Date} date - The date to find the beginning of the week date for.
+ * @return {Date} A new date object representing the first day of the week containing the input date.
+ */
+function getStartDateOfWeek(date, firstDayOfWeek) {
+    var daysOffset = firstDayOfWeek - date.getDay();
+    if (daysOffset > 0) {
+        // If first day of week is > date, go 1 week back, to ensure resulting date is in the past.
+        daysOffset -= TimeConstants_1.default.DaysInOneWeek;
+    }
+    return addDays(date, daysOffset);
+}
+/**
+ * Helper function to assist in date comparisons
+ */
+function getDatePartHashValue(date) {
+    // Generate date hash value created as sum of Date (up to 31 = 5 bits), Month (up to 11 = 4 bits) and Year.
+    /* tslint:disable:no-bitwise */
+    return date.getDate() + (date.getMonth() << 5) + (date.getFullYear() << 9);
+    /* tslint:enable:no-bitwise */
+}
+/**
+* Helper function for getWeekNumber.
+* Returns week number for a date
+* @param {date} Date - current selected date.
+* @param {firstDayOfWeek} DayOfWeek - The first day of week (0-6, Sunday = 0)
+* @param {numberOfFullDays} number - week settings.
+* @return {Number} The week's number in the year.
+*/
+function getWeekOfYearFullDays(date, firstDayOfWeek, numberOfFullDays) {
+    var dayOfYear = getDayOfYear(date) - 1;
+    var dateWeekDay = date.getDay();
+    var num = (date.getDay()) - (dayOfYear % TimeConstants_1.default.DaysInOneWeek);
+    var lastDayOfyear = new Date(date.getFullYear(), DateValues_1.MonthOfYear.December, 31);
+    var daysInYear = getDayOfYear(lastDayOfyear) - 1;
+    var adjustedWeekDay = adjustWeekDay(firstDayOfWeek, dateWeekDay);
+    var num2 = ((firstDayOfWeek - num) + (2 * TimeConstants_1.default.DaysInOneWeek)) % TimeConstants_1.default.DaysInOneWeek;
+    if ((num2 !== 0) && (num2 >= numberOfFullDays)) {
+        num2 -= TimeConstants_1.default.DaysInOneWeek;
+    }
+    var num3 = dayOfYear - num2;
+    if (num3 < 0) {
+        num -= daysInYear % TimeConstants_1.default.DaysInOneWeek;
+        num2 = ((firstDayOfWeek - num) + (2 * TimeConstants_1.default.DaysInOneWeek)) % TimeConstants_1.default.DaysInOneWeek;
+        if ((num2 !== 0) && (num2 + 1 >= numberOfFullDays)) {
+            num2 -= TimeConstants_1.default.DaysInOneWeek;
+        }
+        num3 = daysInYear - num2;
+    }
+    return Math.floor((num3 / TimeConstants_1.default.DaysInOneWeek) + 1);
+}
+/**
+* Helper function for getWeekNumber.
+* Returns week number for a date
+* @param {date} Date - current selected date.
+* @param {firstDayOfWeek} DayOfWeek - The first day of week (0-6, Sunday = 0)
+* @return {Number} The week's number in the year.
+*/
+function getFirstDayWeekOfYear(date, firstDayOfWeek) {
+    var num = getDayOfYear(date) - 1;
+    var num2 = (date.getDay()) - (num % TimeConstants_1.default.DaysInOneWeek);
+    var num3 = ((num2 - firstDayOfWeek) + 2 * TimeConstants_1.default.DaysInOneWeek) % TimeConstants_1.default.DaysInOneWeek;
+    return Math.floor(((num + num3) / TimeConstants_1.default.DaysInOneWeek) + 1);
+}
+/**
+* Helper function for getWeekNumber.
+* Returns adjusted week day number when firstDayOfWeek is other than Sunday
+* For Week Day Number comparison checks
+* @param {firstDayOfWeek} DayOfWeek - The first day of week (0-6, Sunday = 0)
+* @param {dateWeekDay} DayOfWeek - shifts number forward to 1 week in case passed as true
+* @return {DayOfWeek} The day of week adjusted to firstDayOfWeek. E.g. when FirstDyOfWeek is Monday (1), Sunday becomes = 7 (7 > 1).
+*/
+function adjustWeekDay(firstDayOfWeek, dateWeekDay) {
+    return (firstDayOfWeek !== DateValues_1.DayOfWeek.Sunday && dateWeekDay < firstDayOfWeek) ? dateWeekDay + TimeConstants_1.default.DaysInOneWeek : dateWeekDay;
+}
+/**
+ * Returns the day number for a date in a year
+ * The number of days since January 1st in the particular year.
+ * @param {Date} date - A date to find the day number for.
+ * @return {Number} The day's number in the year.
+ */
+function getDayOfYear(date) {
+    var month = date.getMonth();
+    var year = date.getFullYear();
+    var daysUntilDate = 0;
+    for (var i = 0; i < month; i++) {
+        daysUntilDate += daysInMonth((i + 1), year);
+    }
+    daysUntilDate += date.getDate();
+    return daysUntilDate;
+}
+/**
+ * Returns the number of days in the month
+ * @param {number} month - The month number to target (months 1-12).
+ * @param {number} year - The year to target.
+ * @return {Number} The number of days in the month.
+ */
+function daysInMonth(month, year) {
+    return new Date(year, month, 0).getDate();
+}
+
+
+/***/ }),
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2803,15 +3248,15 @@ exports.setWarningCallback = setWarningCallback;
 
 
 /***/ }),
-/* 22 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var GlobalSettings_1 = __webpack_require__(23);
-var EventGroup_1 = __webpack_require__(16);
+var GlobalSettings_1 = __webpack_require__(27);
+var EventGroup_1 = __webpack_require__(18);
 var CustomizationsGlobalKey = 'customizations';
 var NO_CUSTOMIZATIONS = { settings: {}, scopedSettings: {} };
 var _allSettings = GlobalSettings_1.GlobalSettings.getValue(CustomizationsGlobalKey, {
@@ -2868,7 +3313,7 @@ exports.Customizations = Customizations;
 
 
 /***/ }),
-/* 23 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2947,7 +3392,7 @@ var _a;
 
 
 /***/ }),
-/* 24 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2989,7 +3434,7 @@ emptyFunction.thatReturnsArgument = function (arg) {
 module.exports = emptyFunction;
 
 /***/ }),
-/* 25 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3046,10 +3491,10 @@ function invariant(condition, format, a, b, c, d, e, f) {
 }
 
 module.exports = invariant;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(11)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(13)))
 
 /***/ }),
-/* 26 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3068,25 +3513,25 @@ module.exports = ReactPropTypesSecret;
 
 
 /***/ }),
-/* 27 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var buildClassMap_1 = __webpack_require__(114);
+var buildClassMap_1 = __webpack_require__(120);
 exports.buildClassMap = buildClassMap_1.buildClassMap;
-var icons_1 = __webpack_require__(47);
+var icons_1 = __webpack_require__(51);
 exports.getIcon = icons_1.getIcon;
 exports.registerIcons = icons_1.registerIcons;
 exports.registerIconAlias = icons_1.registerIconAlias;
 exports.setIconOptions = icons_1.setIconOptions;
-var getIconClassName_1 = __webpack_require__(115);
+var getIconClassName_1 = __webpack_require__(121);
 exports.getIconClassName = getIconClassName_1.getIconClassName;
 
 
 /***/ }),
-/* 28 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3144,7 +3589,7 @@ exports.DefaultPalette = {
 
 
 /***/ }),
-/* 29 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3152,12 +3597,12 @@ exports.DefaultPalette = {
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 /* tslint:disable:no-unused-variable */
-var React = __webpack_require__(2);
-var ReactDOM = __webpack_require__(33);
+var React = __webpack_require__(1);
+var ReactDOM = __webpack_require__(37);
 /* tslint:enable:no-unused-variable */
-var Fabric_1 = __webpack_require__(147);
-var Utilities_1 = __webpack_require__(1);
-var stylesImport = __webpack_require__(151);
+var Fabric_1 = __webpack_require__(152);
+var Utilities_1 = __webpack_require__(2);
+var stylesImport = __webpack_require__(156);
 var styles = stylesImport;
 var _layersByHostId = {};
 var _defaultHostSelector;
@@ -3275,17 +3720,17 @@ exports.Layer = Layer;
 
 
 /***/ }),
-/* 30 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var BaseButton_1 = __webpack_require__(9);
-var Utilities_1 = __webpack_require__(1);
-var ActionButton_styles_1 = __webpack_require__(160);
+var React = __webpack_require__(1);
+var BaseButton_1 = __webpack_require__(11);
+var Utilities_1 = __webpack_require__(2);
+var ActionButton_styles_1 = __webpack_require__(165);
 var ActionButton = /** @class */ (function (_super) {
     tslib_1.__extends(ActionButton, _super);
     function ActionButton() {
@@ -3309,7 +3754,7 @@ exports.ActionButton = ActionButton;
 
 
 /***/ }),
-/* 31 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3333,10 +3778,10 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
     return t;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var React = __webpack_require__(2);
-var Image_1 = __webpack_require__(64);
-var Label_1 = __webpack_require__(32);
-__webpack_require__(195);
+var React = __webpack_require__(1);
+var Image_1 = __webpack_require__(68);
+var Label_1 = __webpack_require__(10);
+__webpack_require__(200);
 var MovieCard = /** @class */ (function (_super) {
     __extends(MovieCard, _super);
     function MovieCard() {
@@ -3363,24 +3808,94 @@ exports.MovieCard = MovieCard;
 
 
 /***/ }),
-/* 32 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(192), exports);
+/* tslint:disable */
+var load_themed_styles_1 = __webpack_require__(7);
+load_themed_styles_1.loadStyles([{ "rawString": ".root_a7afb82e{-webkit-box-sizing:border-box;box-sizing:border-box;-webkit-box-shadow:none;box-shadow:none;margin:0;padding:0}.picker_a7afb82e{color:" }, { "theme": "black", "defaultValue": "#000000" }, { "rawString": ";font-size:14px;position:relative}html[dir='ltr'] .picker_a7afb82e{text-align:left}html[dir='rtl'] .picker_a7afb82e{text-align:right}.holder_a7afb82e{-webkit-overflow-scrolling:touch;-webkit-box-sizing:border-box;box-sizing:border-box;display:none}.picker_a7afb82e.pickerIsOpened_a7afb82e .holder_a7afb82e{-webkit-box-sizing:border-box;box-sizing:border-box;display:block}.pickerIsOpened_a7afb82e{position:relative}.frame_a7afb82e{padding:1px;position:relative}.wrap_a7afb82e{margin:-1px;padding:9px;display:-webkit-box;display:-ms-flexbox;display:flex}.dayPicker_a7afb82e{display:block}.header_a7afb82e{position:relative;display:-webkit-inline-box;display:-ms-inline-flexbox;display:inline-flex;height:40px;line-height:44px}.monthAndYear_a7afb82e,.year_a7afb82e{display:inline-block;font-size:21px;font-weight:100;color:" }, { "theme": "neutralPrimary", "defaultValue": "#333333" }, { "rawString": ";margin-top:-1px;font-weight:300;padding:0 5px}html[dir='ltr'] .monthAndYear_a7afb82e{margin-left:5px}html[dir='rtl'] .monthAndYear_a7afb82e{margin-right:5px}html[dir='ltr'] .year_a7afb82e{margin-left:5px}html[dir='rtl'] .year_a7afb82e{margin-right:5px}.table_a7afb82e{text-align:center;border-collapse:collapse;border-spacing:0;table-layout:fixed;font-size:inherit;margin-top:10px}.table_a7afb82e td{margin:0;padding:0}.table_a7afb82e td:hover{outline:1px solid transparent}.day_a7afb82e,.weekday_a7afb82e{width:40px;height:40px;padding:0;line-height:40px;font-size:15px;font-weight:400;color:" }, { "theme": "neutralPrimary", "defaultValue": "#333333" }, { "rawString": ";-webkit-box-sizing:border-box;box-sizing:border-box}.dayIsToday_a7afb82e{position:relative;background-color:" }, { "theme": "themeLight", "defaultValue": "#c7e0f4" }, { "rawString": "}@media screen and (-ms-high-contrast: active){.dayIsToday_a7afb82e{border:1px solid WindowText}}.dayIsDisabled_a7afb82e:before{border-top-color:" }, { "theme": "neutralTertiary", "defaultValue": "#a6a6a6" }, { "rawString": "}.dayIsUnfocused_a7afb82e,.dayIsDisabled_a7afb82e{color:" }, { "theme": "neutralTertiary", "defaultValue": "#a6a6a6" }, { "rawString": ";font-weight:400}.dayIsFocused_a7afb82e:hover,.dayIsUnfocused_a7afb82e:hover{cursor:pointer;background:" }, { "theme": "neutralTertiaryAlt", "defaultValue": "#c8c8c8" }, { "rawString": "}.day_a7afb82e.dayIsHighlighted_a7afb82e.dayIsFocused_a7afb82e::-moz-focus-inner{border:0}.day_a7afb82e.dayIsHighlighted_a7afb82e.dayIsFocused_a7afb82e{outline:transparent}.day_a7afb82e.dayIsHighlighted_a7afb82e.dayIsFocused_a7afb82e{position:relative}.ms-Fabric.is-focusVisible .day_a7afb82e.dayIsHighlighted_a7afb82e.dayIsFocused_a7afb82e:focus:after{content:'';position:absolute;top:1px;right:1px;bottom:1px;left:1px;pointer-events:none;border:1px solid " }, { "theme": "white", "defaultValue": "#ffffff" }, { "rawString": "}@media screen and (-ms-high-contrast: active){.day_a7afb82e.dayIsHighlighted_a7afb82e.dayIsFocused_a7afb82e::-moz-focus-inner{border:0}.day_a7afb82e.dayIsHighlighted_a7afb82e.dayIsFocused_a7afb82e{outline:transparent}.day_a7afb82e.dayIsHighlighted_a7afb82e.dayIsFocused_a7afb82e{position:relative}.ms-Fabric.is-focusVisible .day_a7afb82e.dayIsHighlighted_a7afb82e.dayIsFocused_a7afb82e:focus:after{content:'';position:absolute;top:1px;right:1px;bottom:1px;left:1px;pointer-events:none;border:1px solid WindowText}}.dayIsHighlighted_a7afb82e:hover,.pickerIsFocused_a7afb82e .dayIsHighlighted_a7afb82e{cursor:pointer}@media screen and (-ms-high-contrast: active){.dayIsHighlighted_a7afb82e:hover,.pickerIsFocused_a7afb82e .dayIsHighlighted_a7afb82e{border:2px solid Highlight}}.dayIsUnfocused_a7afb82e:active.day_a7afb82e,.dayIsFocused_a7afb82e:active.day_a7afb82e,.dayIsHighlighted_a7afb82e.day_a7afb82e{color:" }, { "theme": "black", "defaultValue": "#000000" }, { "rawString": ";background:" }, { "theme": "themeLight", "defaultValue": "#c7e0f4" }, { "rawString": "}.dayIsHighlighted_a7afb82e.dayDisabled_a7afb82e,.dayIsHighlighted_a7afb82e.dayDisabled_a7afb82e:hover{background:" }, { "theme": "neutralTertiary", "defaultValue": "#a6a6a6" }, { "rawString": "}.dayIsToday_a7afb82e,.pickerIsFocused_a7afb82e .dayIsToday_a7afb82e{position:relative;color:" }, { "theme": "white", "defaultValue": "#ffffff" }, { "rawString": ";background-color:" }, { "theme": "themePrimary", "defaultValue": "#0078d7" }, { "rawString": ";font-weight:600}.dayBackground_a7afb82e,.weekBackground_a7afb82e,.monthBackground_a7afb82e{background:" }, { "theme": "neutralLight", "defaultValue": "#eaeaea" }, { "rawString": "}.showWeekNumbers_a7afb82e .weekNumbers_a7afb82e{position:absolute;margin-top:40px;border-right:1px solid " }, { "theme": "neutralLight", "defaultValue": "#eaeaea" }, { "rawString": ";-webkit-box-sizing:border-box;box-sizing:border-box;width:30px}.showWeekNumbers_a7afb82e .weekNumbers_a7afb82e .day_a7afb82e{color:" }, { "theme": "neutralSecondary", "defaultValue": "#666666" }, { "rawString": "}.showWeekNumbers_a7afb82e .weekNumbers_a7afb82e .day_a7afb82e.weekIsHighlighted_a7afb82e{color:" }, { "theme": "black", "defaultValue": "#000000" }, { "rawString": "}.showWeekNumbers_a7afb82e .table_a7afb82e:not(.weekNumbers_a7afb82e){margin-left:30px}.showWeekNumbers_a7afb82e .table_a7afb82e .day_a7afb82e,.showWeekNumbers_a7afb82e .table_a7afb82e .weekday_a7afb82e{width:30px}.monthComponents_a7afb82e,.yearComponents_a7afb82e,.decadeComponents_a7afb82e{display:-webkit-inline-box;display:-ms-inline-flexbox;display:inline-flex;margin-left:3px}.yearComponents_a7afb82e{margin-left:3px}.prevMonth_a7afb82e,.nextMonth_a7afb82e,.prevYear_a7afb82e,.nextYear_a7afb82e,.prevDecade_a7afb82e,.nextDecade_a7afb82e{width:40px;height:40px;display:block;text-align:center;line-height:40px;text-align:center;font-size:16px;color:" }, { "theme": "neutralDark", "defaultValue": "#212121" }, { "rawString": ";position:relative;top:2px}.prevMonth_a7afb82e:hover,.nextMonth_a7afb82e:hover,.prevYear_a7afb82e:hover,.nextYear_a7afb82e:hover,.prevDecade_a7afb82e:hover,.nextDecade_a7afb82e:hover{color:" }, { "theme": "neutralDark", "defaultValue": "#212121" }, { "rawString": ";cursor:pointer;outline:1px solid transparent}.prevMonthIsDisabled_a7afb82e,.nextMonthIsDisabled_a7afb82e,.prevYearIsDisabled_a7afb82e,.nextYearIsDisabled_a7afb82e,.prevDecadeIsDisabled_a7afb82e,.nextDecadeIsDisabled_a7afb82e{visibility:hidden}.headerToggleView_a7afb82e:hover{color:" }, { "theme": "neutralSecondary", "defaultValue": "#666666" }, { "rawString": ";cursor:pointer}.currentYear_a7afb82e,.currentDecade_a7afb82e{display:block;padding:0 5px;font-size:21px;font-weight:100;color:" }, { "theme": "neutralPrimary", "defaultValue": "#333333" }, { "rawString": ";height:40px;line-height:40px;font-weight:300}html[dir='ltr'] .currentYear_a7afb82e,html[dir='ltr'] .currentDecade_a7afb82e{margin-left:5px}html[dir='rtl'] .currentYear_a7afb82e,html[dir='rtl'] .currentDecade_a7afb82e{margin-right:5px}.optionGrid_a7afb82e{position:relative;height:210px;width:280px;margin:12px 0 0 0}html[dir='rtl'] .optionGrid_a7afb82e{margin:12px 0 0 0}.monthOption_a7afb82e,.yearOption_a7afb82e{width:60px;height:60px;line-height:60px;cursor:pointer;margin:0 10px 10px 0;font-size:13px;font-weight:400;color:" }, { "theme": "neutralPrimary", "defaultValue": "#333333" }, { "rawString": ";text-align:center}html[dir='ltr'] .monthOption_a7afb82e,html[dir='ltr'] .yearOption_a7afb82e{float:left}html[dir='rtl'] .monthOption_a7afb82e,html[dir='rtl'] .yearOption_a7afb82e{float:right}html[dir='rtl'] .monthOption_a7afb82e,html[dir='rtl'] .yearOption_a7afb82e{margin:0 0 10px 10px}.monthOption_a7afb82e:hover,.yearOption_a7afb82e:hover{color:" }, { "theme": "black", "defaultValue": "#000000" }, { "rawString": ";background-color:" }, { "theme": "neutralTertiaryAlt", "defaultValue": "#c8c8c8" }, { "rawString": ";outline:1px solid transparent}.monthOption_a7afb82e.isHighlighted_a7afb82e,.yearOption_a7afb82e.isHighlighted_a7afb82e{background-color:" }, { "theme": "neutralPrimary", "defaultValue": "#333333" }, { "rawString": ";color:" }, { "theme": "white", "defaultValue": "#ffffff" }, { "rawString": "}.monthOptionIsDisabled_a7afb82e,.yearOptionIsDisabled_a7afb82e{background-color:" }, { "theme": "neutralLighter", "defaultValue": "#f4f4f4" }, { "rawString": ";color:" }, { "theme": "neutralTertiaryAlt", "defaultValue": "#c8c8c8" }, { "rawString": ";pointer-events:none}.goToday_a7afb82e{bottom:9px;color:" }, { "theme": "themePrimary", "defaultValue": "#0078d7" }, { "rawString": ";cursor:pointer;font-size:12px;font-weight:400;color:" }, { "theme": "neutralPrimary", "defaultValue": "#333333" }, { "rawString": ";height:30px;line-height:30px;padding:0 10px;position:absolute !important}[dir='ltr'] .goToday_a7afb82e{right:13px}[dir='rtl'] .goToday_a7afb82e{left:13px}.goToday_a7afb82e:hover{color:" }, { "theme": "themePrimary", "defaultValue": "#0078d7" }, { "rawString": ";outline:1px solid transparent}.goToday_a7afb82e:active{color:" }, { "theme": "themeDark", "defaultValue": "#005a9e" }, { "rawString": "}.wrap_a7afb82e.goTodaySpacing_a7afb82e{margin-bottom:30px}.root_a7afb82e.isPickingYears_a7afb82e .dayPicker_a7afb82e,.root_a7afb82e.isPickingYears_a7afb82e .monthComponents_a7afb82e{display:none}.root_a7afb82e.isPickingYears_a7afb82e .monthPicker_a7afb82e{display:none}.root_a7afb82e.isPickingYears_a7afb82e .yearPicker_a7afb82e{display:block}@media (min-device-width: 460px){.wrap_a7afb82e{padding:9px 8px}.dayPicker_a7afb82e,.monthPicker_a7afb82e{min-height:214px}.header_a7afb82e{height:28px;line-height:28px}.day_a7afb82e,.weekday_a7afb82e{width:28px;height:28px;line-height:28px;font-size:12px}.prevMonth_a7afb82e,.nextMonth_a7afb82e,.prevYear_a7afb82e,.nextYear_a7afb82e,.prevDecade_a7afb82e,.nextDecade_a7afb82e{font-size:14px;width:24px;height:24px;line-height:24px}.holder_a7afb82e{width:212px;height:auto}.monthAndYear_a7afb82e,.year_a7afb82e{font-size:17px;color:" }, { "theme": "neutralPrimary", "defaultValue": "#333333" }, { "rawString": "}.yearComponents_a7afb82e{margin-left:1px}.goToday_a7afb82e{padding:0 3px}.showWeekNumbers_a7afb82e .weekNumbers_a7afb82e{margin-top:28px;width:26px;margin-left:-7px}.showWeekNumbers_a7afb82e .table_a7afb82e:not(.weekNumbers_a7afb82e){margin-left:19px}.showWeekNumbers_a7afb82e .table_a7afb82e .day_a7afb82e,.showWeekNumbers_a7afb82e .table_a7afb82e .weekday_a7afb82e{width:26px}.monthPickerVisible_a7afb82e .wrap_a7afb82e{padding:10px}.monthPickerVisible_a7afb82e .dayPicker_a7afb82e{margin:-10px 0;padding:10px 0}.monthPickerVisible_a7afb82e .dayPicker_a7afb82e{-webkit-box-sizing:border-box;box-sizing:border-box;width:212px;min-height:214px}html[dir='ltr'] .monthPickerVisible_a7afb82e .dayPicker_a7afb82e{border-right:1px solid " }, { "theme": "neutralLight", "defaultValue": "#eaeaea" }, { "rawString": "}html[dir='rtl'] .monthPickerVisible_a7afb82e .dayPicker_a7afb82e{border-left:1px solid " }, { "theme": "neutralLight", "defaultValue": "#eaeaea" }, { "rawString": "}.monthPickerVisible_a7afb82e .monthPicker_a7afb82e{display:block}.monthPickerVisible_a7afb82e .optionGrid_a7afb82e{height:150px;width:212px}.monthPickerVisible_a7afb82e .toggleMonthView_a7afb82e{display:none}.monthPickerVisible_a7afb82e .currentYear_a7afb82e,.monthPickerVisible_a7afb82e .currentDecade_a7afb82e{font-size:17px;margin:0;height:28px;line-height:26px;display:inline-block}.monthPickerVisible_a7afb82e .monthOption_a7afb82e,.monthPickerVisible_a7afb82e .yearOption_a7afb82e{width:40px;height:40px;line-height:40px;font-size:12px;margin:0 11px 11px 0}html[dir='rtl'] .monthPickerVisible_a7afb82e .monthOption_a7afb82e,html[dir='rtl'] .monthPickerVisible_a7afb82e .yearOption_a7afb82e{margin:0 0 11px 11px}.monthPickerVisible_a7afb82e .monthOption_a7afb82e:hover,.monthPickerVisible_a7afb82e .yearOption_a7afb82e:hover{outline:1px solid transparent}.monthPickerVisible_a7afb82e .monthOption_a7afb82e:nth-child(4n+4),.monthPickerVisible_a7afb82e .yearOption_a7afb82e:nth-child(4n+4){margin:0 0px 11px 0}html[dir='rtl'] .monthPickerVisible_a7afb82e .monthOption_a7afb82e:nth-child(4n+4),html[dir='rtl'] .monthPickerVisible_a7afb82e .yearOption_a7afb82e:nth-child(4n+4){margin:0 0 11px 0px}.monthPickerVisible_a7afb82e .goToday_a7afb82e{-webkit-box-sizing:border-box;box-sizing:border-box;font-size:12px;height:28px;line-height:28px;padding:0 10px;top:199px}[dir='ltr'] .monthPickerVisible_a7afb82e .goToday_a7afb82e{right:8px}[dir='rtl'] .monthPickerVisible_a7afb82e .goToday_a7afb82e{left:8px}html[dir='ltr'] .monthPickerVisible_a7afb82e .goToday_a7afb82e{text-align:right}html[dir='rtl'] .monthPickerVisible_a7afb82e .goToday_a7afb82e{text-align:left}.monthPickerVisible_a7afb82e .wrap_a7afb82e.goTodaySpacing_a7afb82e{margin-bottom:0px}.monthPickerVisible_a7afb82e .root_a7afb82e.isPickingYears_a7afb82e .dayPicker_a7afb82e,.monthPickerVisible_a7afb82e .root_a7afb82e.isPickingYears_a7afb82e .monthComponents_a7afb82e{display:block}.monthPickerVisible_a7afb82e .root_a7afb82e.isPickingYears_a7afb82e .monthPicker_a7afb82e{display:none}.monthPickerVisible_a7afb82e .root_a7afb82e.isPickingYears_a7afb82e .yearPicker_a7afb82e{display:block}.calendarsInline_a7afb82e .wrap_a7afb82e{padding:9px 12px}.calendarsInline_a7afb82e .holder_a7afb82e{width:440px;height:auto}.calendarsInline_a7afb82e .table_a7afb82e{margin-right:12px}.calendarsInline_a7afb82e .dayPicker_a7afb82e{width:auto}.calendarsInline_a7afb82e .monthPicker_a7afb82e{margin-left:13px}.calendarsInline_a7afb82e .goToday_a7afb82e{padding:0 10px}[dir='ltr'] .calendarsInline_a7afb82e .goToday_a7afb82e{right:13px}[dir='rtl'] .calendarsInline_a7afb82e .goToday_a7afb82e{left:13px}.monthPickerOnly_a7afb82e .wrap_a7afb82e{padding:10px}.monthPickerAsOverlay_a7afb82e .wrap_a7afb82e{padding-top:4px;padding-bottom:4px}.monthPickerAsOverlay_a7afb82e .holder_a7afb82e{height:240px;min-height:240px}.monthPickerAsOverlay_a7afb82e .holderWithButton_a7afb82e{padding-top:6px;height:auto}}@media (max-device-width: 459px){.holder_a7afb82e{width:300px}.calendarsInline_a7afb82e .monthPicker_a7afb82e,.calendarsInline_a7afb82e .yearPicker_a7afb82e{display:none}.yearComponents_a7afb82e{margin-top:2px}}.wrap_a7afb82e span:focus::-moz-focus-inner,.wrap_a7afb82e div:focus::-moz-focus-inner{border:0}.wrap_a7afb82e span:focus,.wrap_a7afb82e div:focus{outline:transparent}.wrap_a7afb82e span:focus,.wrap_a7afb82e div:focus{position:relative}.ms-Fabric.is-focusVisible .wrap_a7afb82e span:focus:focus:after,.ms-Fabric.is-focusVisible .wrap_a7afb82e div:focus:focus:after{content:'';position:absolute;top:1px;right:1px;bottom:1px;left:1px;pointer-events:none;border:1px solid " }, { "theme": "neutralSecondary", "defaultValue": "#666666" }, { "rawString": "}.goToday_a7afb82e{width:auto}.nextMonth_a7afb82e,.prevMonth_a7afb82e,.nextYear_a7afb82e,.prevYear_a7afb82e{display:inline-block}.nextMonth_a7afb82e:hover,.prevMonth_a7afb82e:hover,.nextYear_a7afb82e:hover,.prevYear_a7afb82e:hover{background-color:" }, { "theme": "neutralTertiaryAlt", "defaultValue": "#c8c8c8" }, { "rawString": "}.nextMonth_a7afb82e,.nextYear_a7afb82e{margin-left:3px}.monthIsHighlighted_a7afb82e{background-color:" }, { "theme": "themeLight", "defaultValue": "#c7e0f4" }, { "rawString": "}.monthIsHighlighted_a7afb82e.monthOption_a7afb82e:hover{background-color:" }, { "theme": "themeLight", "defaultValue": "#c7e0f4" }, { "rawString": "}.monthIsCurrentMonth_a7afb82e{font-weight:600;color:" }, { "theme": "white", "defaultValue": "#ffffff" }, { "rawString": ";background-color:" }, { "theme": "themePrimary", "defaultValue": "#0078d7" }, { "rawString": "}.monthIsCurrentMonth_a7afb82e.monthOption_a7afb82e:hover{font-weight:600;color:" }, { "theme": "white", "defaultValue": "#ffffff" }, { "rawString": ";background-color:" }, { "theme": "themePrimary", "defaultValue": "#0078d7" }, { "rawString": "}.monthOption_a7afb82e:active{background-color:" }, { "theme": "themeLight", "defaultValue": "#c7e0f4" }, { "rawString": "}.topLeftCornerDate_a7afb82e{border-radius:0}.topRightCornerDate_a7afb82e{border-radius:0}.bottomLeftCornerDate_a7afb82e{border-radius:0}.bottomRightCornerDate_a7afb82e{border-radius:0}.singleTopDate_a7afb82e{border-radius:0}.singleBottomDate_a7afb82e{border-radius:0}\n" }]);
+exports.root = "root_a7afb82e";
+exports.picker = "picker_a7afb82e";
+exports.holder = "holder_a7afb82e";
+exports.pickerIsOpened = "pickerIsOpened_a7afb82e";
+exports.frame = "frame_a7afb82e";
+exports.wrap = "wrap_a7afb82e";
+exports.dayPicker = "dayPicker_a7afb82e";
+exports.header = "header_a7afb82e";
+exports.monthAndYear = "monthAndYear_a7afb82e";
+exports.year = "year_a7afb82e";
+exports.table = "table_a7afb82e";
+exports.day = "day_a7afb82e";
+exports.weekday = "weekday_a7afb82e";
+exports.dayIsToday = "dayIsToday_a7afb82e";
+exports.dayIsDisabled = "dayIsDisabled_a7afb82e";
+exports.dayIsUnfocused = "dayIsUnfocused_a7afb82e";
+exports.dayIsFocused = "dayIsFocused_a7afb82e";
+exports.dayIsHighlighted = "dayIsHighlighted_a7afb82e";
+exports.pickerIsFocused = "pickerIsFocused_a7afb82e";
+exports.dayDisabled = "dayDisabled_a7afb82e";
+exports.dayBackground = "dayBackground_a7afb82e";
+exports.weekBackground = "weekBackground_a7afb82e";
+exports.monthBackground = "monthBackground_a7afb82e";
+exports.showWeekNumbers = "showWeekNumbers_a7afb82e";
+exports.weekNumbers = "weekNumbers_a7afb82e";
+exports.weekIsHighlighted = "weekIsHighlighted_a7afb82e";
+exports.monthComponents = "monthComponents_a7afb82e";
+exports.yearComponents = "yearComponents_a7afb82e";
+exports.decadeComponents = "decadeComponents_a7afb82e";
+exports.prevMonth = "prevMonth_a7afb82e";
+exports.nextMonth = "nextMonth_a7afb82e";
+exports.prevYear = "prevYear_a7afb82e";
+exports.nextYear = "nextYear_a7afb82e";
+exports.prevDecade = "prevDecade_a7afb82e";
+exports.nextDecade = "nextDecade_a7afb82e";
+exports.prevMonthIsDisabled = "prevMonthIsDisabled_a7afb82e";
+exports.nextMonthIsDisabled = "nextMonthIsDisabled_a7afb82e";
+exports.prevYearIsDisabled = "prevYearIsDisabled_a7afb82e";
+exports.nextYearIsDisabled = "nextYearIsDisabled_a7afb82e";
+exports.prevDecadeIsDisabled = "prevDecadeIsDisabled_a7afb82e";
+exports.nextDecadeIsDisabled = "nextDecadeIsDisabled_a7afb82e";
+exports.headerToggleView = "headerToggleView_a7afb82e";
+exports.currentYear = "currentYear_a7afb82e";
+exports.currentDecade = "currentDecade_a7afb82e";
+exports.optionGrid = "optionGrid_a7afb82e";
+exports.monthOption = "monthOption_a7afb82e";
+exports.yearOption = "yearOption_a7afb82e";
+exports.isHighlighted = "isHighlighted_a7afb82e";
+exports.monthOptionIsDisabled = "monthOptionIsDisabled_a7afb82e";
+exports.yearOptionIsDisabled = "yearOptionIsDisabled_a7afb82e";
+exports.goToday = "goToday_a7afb82e";
+exports.goTodaySpacing = "goTodaySpacing_a7afb82e";
+exports.isPickingYears = "isPickingYears_a7afb82e";
+exports.monthPicker = "monthPicker_a7afb82e";
+exports.yearPicker = "yearPicker_a7afb82e";
+exports.monthPickerVisible = "monthPickerVisible_a7afb82e";
+exports.toggleMonthView = "toggleMonthView_a7afb82e";
+exports.calendarsInline = "calendarsInline_a7afb82e";
+exports.monthPickerOnly = "monthPickerOnly_a7afb82e";
+exports.monthPickerAsOverlay = "monthPickerAsOverlay_a7afb82e";
+exports.holderWithButton = "holderWithButton_a7afb82e";
+exports.monthIsHighlighted = "monthIsHighlighted_a7afb82e";
+exports.monthIsCurrentMonth = "monthIsCurrentMonth_a7afb82e";
+exports.topLeftCornerDate = "topLeftCornerDate_a7afb82e";
+exports.topRightCornerDate = "topRightCornerDate_a7afb82e";
+exports.bottomLeftCornerDate = "bottomLeftCornerDate_a7afb82e";
+exports.bottomRightCornerDate = "bottomRightCornerDate_a7afb82e";
+exports.singleTopDate = "singleTopDate_a7afb82e";
+exports.singleBottomDate = "singleBottomDate_a7afb82e";
 
 
 /***/ }),
-/* 33 */
+/* 37 */
 /***/ (function(module, exports) {
 
 module.exports = ReactDOM;
 
 /***/ }),
-/* 34 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3804,14 +4319,14 @@ exports.Async = Async;
 
 
 /***/ }),
-/* 35 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var dom_1 = __webpack_require__(10);
-var styles = __webpack_require__(71);
+var dom_1 = __webpack_require__(12);
+var styles = __webpack_require__(77);
 var _scrollbarWidth;
 var _bodyScrollDisabledCount = 0;
 /**
@@ -3910,17 +4425,17 @@ exports.findScrollableParent = findScrollableParent;
 
 
 /***/ }),
-/* 36 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var Async_1 = __webpack_require__(34);
-var EventGroup_1 = __webpack_require__(16);
-var warn_1 = __webpack_require__(21);
+var React = __webpack_require__(1);
+var Async_1 = __webpack_require__(38);
+var EventGroup_1 = __webpack_require__(18);
+var warn_1 = __webpack_require__(25);
 /**
  * BaseComponent class, which provides basic helpers for all components.
  *
@@ -4155,7 +4670,7 @@ exports.nullRender = nullRender;
 
 
 /***/ }),
-/* 37 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(process) {/**
@@ -4180,17 +4695,17 @@ if (process.env.NODE_ENV !== 'production') {
   // By explicitly using `prop-types` you are opting into new development behavior.
   // http://fb.me/prop-types-in-prod
   var throwOnDirectAccess = true;
-  module.exports = __webpack_require__(74)(isValidElement, throwOnDirectAccess);
+  module.exports = __webpack_require__(80)(isValidElement, throwOnDirectAccess);
 } else {
   // By explicitly using `prop-types` you are opting into new production behavior.
   // http://fb.me/prop-types-in-prod
-  module.exports = __webpack_require__(77)();
+  module.exports = __webpack_require__(83)();
 }
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(11)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(13)))
 
 /***/ }),
-/* 38 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4204,7 +4719,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 
 
-var emptyFunction = __webpack_require__(24);
+var emptyFunction = __webpack_require__(28);
 
 /**
  * Similar to invariant but only logs a warning if the condition is not met.
@@ -4256,16 +4771,16 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 module.exports = warning;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(11)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(13)))
 
 /***/ }),
-/* 39 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Stylesheet_1 = __webpack_require__(13);
+var Stylesheet_1 = __webpack_require__(15);
 /**
  * Separates the classes and style objects. Any classes that are pre-registered
  * args are auto expanded into objects.
@@ -4318,7 +4833,7 @@ exports.extractStyleParts = extractStyleParts;
 
 
 /***/ }),
-/* 40 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4358,14 +4873,14 @@ exports.concatStyleSets = concatStyleSets;
 
 
 /***/ }),
-/* 41 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var dom_1 = __webpack_require__(10);
-var localStorage_1 = __webpack_require__(100);
+var dom_1 = __webpack_require__(12);
+var localStorage_1 = __webpack_require__(106);
 // Default to undefined so that we initialize on first read.
 var _language;
 /**
@@ -4410,7 +4925,7 @@ exports.setLanguage = setLanguage;
 
 
 /***/ }),
-/* 42 */
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4522,10 +5037,10 @@ function mapEnumByName(
 }
 exports.mapEnumByName = mapEnumByName;
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(11)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(13)))
 
 /***/ }),
-/* 43 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4556,7 +5071,7 @@ var IconType;
 
 
 /***/ }),
-/* 44 */
+/* 48 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4564,12 +5079,12 @@ var IconType;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 /* tslint:disable:no-unused-variable */
-var React = __webpack_require__(2);
+var React = __webpack_require__(1);
 /* tslint:enable:no-unused-variable */
-var Utilities_1 = __webpack_require__(1);
-var Image_types_1 = __webpack_require__(45);
+var Utilities_1 = __webpack_require__(2);
+var Image_types_1 = __webpack_require__(49);
 var Styling_1 = __webpack_require__(3);
-var stylesImport = __webpack_require__(124);
+var stylesImport = __webpack_require__(130);
 var styles = stylesImport;
 exports.CoverStyleMap = (_a = {},
     _a[Image_types_1.ImageCoverStyle.landscape] = 'ms-Image-image--landscape ' + styles.imageIsLandscape,
@@ -4710,7 +5225,7 @@ var _a, _b;
 
 
 /***/ }),
-/* 45 */
+/* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4780,13 +5295,13 @@ var ImageLoadState;
 
 
 /***/ }),
-/* 46 */
+/* 50 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var index_1 = __webpack_require__(6);
+var index_1 = __webpack_require__(9);
 exports.InjectionMode = index_1.InjectionMode;
 exports.Stylesheet = index_1.Stylesheet;
 exports.concatStyleSets = index_1.concatStyleSets;
@@ -4797,16 +5312,16 @@ exports.mergeStyles = index_1.mergeStyles;
 
 
 /***/ }),
-/* 47 */
+/* 51 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var warn_1 = __webpack_require__(21);
-var GlobalSettings_1 = __webpack_require__(23);
-var index_1 = __webpack_require__(6);
+var warn_1 = __webpack_require__(25);
+var GlobalSettings_1 = __webpack_require__(27);
+var index_1 = __webpack_require__(9);
 var ICON_SETTING_NAME = 'icons';
 var _iconSettings = GlobalSettings_1.GlobalSettings.getValue(ICON_SETTING_NAME, {
     __options: {
@@ -4900,15 +5415,15 @@ exports.setIconOptions = setIconOptions;
 
 
 /***/ }),
-/* 48 */
+/* 52 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var index_1 = __webpack_require__(6);
-var fonts_1 = __webpack_require__(49);
-var language_1 = __webpack_require__(41);
+var index_1 = __webpack_require__(9);
+var fonts_1 = __webpack_require__(53);
+var language_1 = __webpack_require__(45);
 // Default urls.
 var DefaultBaseUrl = 'https://static2.sharepointonline.com/files/fabric/assets';
 // Standard font styling.
@@ -4969,7 +5484,7 @@ registerDefaultFontFaces(_getFontBaseUrl());
 
 
 /***/ }),
-/* 49 */
+/* 53 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5107,13 +5622,13 @@ function _createFont(size, weight, localeCode) {
 
 
 /***/ }),
-/* 50 */
+/* 54 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var DirectionalHint_1 = __webpack_require__(51);
+var DirectionalHint_1 = __webpack_require__(55);
 exports.DirectionalHint = DirectionalHint_1.DirectionalHint;
 var ContextualMenuItemType;
 (function (ContextualMenuItemType) {
@@ -5125,7 +5640,7 @@ var ContextualMenuItemType;
 
 
 /***/ }),
-/* 51 */
+/* 55 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5193,18 +5708,7 @@ var DirectionalHint;
 
 
 /***/ }),
-/* 52 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(129), exports);
-
-
-/***/ }),
-/* 53 */
+/* 56 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5222,13 +5726,13 @@ var FocusZoneDirection;
 
 
 /***/ }),
-/* 54 */
+/* 57 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Utilities_1 = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
 var Styling_1 = __webpack_require__(3);
 exports.getDividerClassNames = Utilities_1.memoizeFunction(function (theme) {
     return Styling_1.mergeStyleSets({
@@ -5247,7 +5751,18 @@ exports.getDividerClassNames = Utilities_1.memoizeFunction(function (theme) {
 
 
 /***/ }),
-/* 55 */
+/* 58 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+tslib_1.__exportStar(__webpack_require__(141), exports);
+
+
+/***/ }),
+/* 59 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5270,18 +5785,18 @@ var Position;
 
 
 /***/ }),
-/* 56 */
+/* 60 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(142), exports);
+tslib_1.__exportStar(__webpack_require__(147), exports);
 
 
 /***/ }),
-/* 57 */
+/* 61 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5307,7 +5822,7 @@ var ButtonType;
 
 
 /***/ }),
-/* 58 */
+/* 62 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5483,17 +5998,17 @@ exports.primaryStyles = primaryStyles;
 
 
 /***/ }),
-/* 59 */
+/* 63 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var BaseButton_1 = __webpack_require__(9);
-var Utilities_1 = __webpack_require__(1);
-var CompoundButton_styles_1 = __webpack_require__(161);
+var React = __webpack_require__(1);
+var BaseButton_1 = __webpack_require__(11);
+var Utilities_1 = __webpack_require__(2);
+var CompoundButton_styles_1 = __webpack_require__(166);
 var CompoundButton = /** @class */ (function (_super) {
     tslib_1.__extends(CompoundButton, _super);
     function CompoundButton() {
@@ -5517,17 +6032,17 @@ exports.CompoundButton = CompoundButton;
 
 
 /***/ }),
-/* 60 */
+/* 64 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var BaseButton_1 = __webpack_require__(9);
-var Utilities_1 = __webpack_require__(1);
-var IconButton_styles_1 = __webpack_require__(162);
+var React = __webpack_require__(1);
+var BaseButton_1 = __webpack_require__(11);
+var Utilities_1 = __webpack_require__(2);
+var IconButton_styles_1 = __webpack_require__(167);
 var IconButton = /** @class */ (function (_super) {
     tslib_1.__extends(IconButton, _super);
     function IconButton() {
@@ -5551,16 +6066,16 @@ exports.IconButton = IconButton;
 
 
 /***/ }),
-/* 61 */
+/* 65 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var Utilities_1 = __webpack_require__(1);
-var DefaultButton_1 = __webpack_require__(19);
+var React = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
+var DefaultButton_1 = __webpack_require__(22);
 var PrimaryButton = /** @class */ (function (_super) {
     tslib_1.__extends(PrimaryButton, _super);
     function PrimaryButton() {
@@ -5583,18 +6098,18 @@ exports.PrimaryButton = PrimaryButton;
 
 
 /***/ }),
-/* 62 */
+/* 66 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var ActionButton_1 = __webpack_require__(30);
+var ActionButton_1 = __webpack_require__(34);
 exports.CommandButton = ActionButton_1.ActionButton;
 
 
 /***/ }),
-/* 63 */
+/* 67 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5682,18 +6197,18 @@ var PanelType;
 
 
 /***/ }),
-/* 64 */
+/* 68 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(191), exports);
+tslib_1.__exportStar(__webpack_require__(196), exports);
 
 
 /***/ }),
-/* 65 */
+/* 69 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5707,17 +6222,41 @@ var FavoriteIconSizeEnum;
 
 
 /***/ }),
-/* 66 */
+/* 70 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var React = __webpack_require__(2);
-var ReactDOM = __webpack_require__(33);
-var MovieDB_1 = __webpack_require__(67);
-var icons_1 = __webpack_require__(214);
-__webpack_require__(229);
+var DateValues_1 = __webpack_require__(16);
+exports.DayOfWeek = DateValues_1.DayOfWeek;
+exports.FirstWeekOfYear = DateValues_1.FirstWeekOfYear;
+exports.DateRangeType = DateValues_1.DateRangeType;
+
+
+/***/ }),
+/* 71 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+tslib_1.__exportStar(__webpack_require__(237), exports);
+
+
+/***/ }),
+/* 72 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var React = __webpack_require__(1);
+var ReactDOM = __webpack_require__(37);
+var MovieDB_1 = __webpack_require__(73);
+var icons_1 = __webpack_require__(252);
+__webpack_require__(267);
 icons_1.initializeIcons();
 /* ReactDOM.render(
     <MovieDB compiler="TypeScript" framework="React"/>,
@@ -5727,7 +6266,7 @@ ReactDOM.render(React.createElement(MovieDB_1.MovieDB, null), document.getElemen
 
 
 /***/ }),
-/* 67 */
+/* 73 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5749,14 +6288,14 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var React = __webpack_require__(2);
-var Button_1 = __webpack_require__(15);
-var Utilities_1 = __webpack_require__(1);
-var SearchBox_1 = __webpack_require__(167);
-var Nav_1 = __webpack_require__(172);
-var Panel_1 = __webpack_require__(176);
-__webpack_require__(186);
-var PageConfiguration_1 = __webpack_require__(189);
+var React = __webpack_require__(1);
+var Button_1 = __webpack_require__(17);
+var Utilities_1 = __webpack_require__(2);
+var SearchBox_1 = __webpack_require__(172);
+var Nav_1 = __webpack_require__(177);
+var Panel_1 = __webpack_require__(181);
+__webpack_require__(191);
+var PageConfiguration_1 = __webpack_require__(194);
 // 'HelloProps' describes the shape of props.
 // State is never set so we use the '{}' type.
 var MovieDB = /** @class */ (function (_super) {
@@ -5853,80 +6392,80 @@ exports.MovieDB = MovieDB;
 
 
 /***/ }),
-/* 68 */
+/* 74 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(9), exports);
-tslib_1.__exportStar(__webpack_require__(57), exports);
-tslib_1.__exportStar(__webpack_require__(158), exports);
-tslib_1.__exportStar(__webpack_require__(30), exports);
-tslib_1.__exportStar(__webpack_require__(163), exports);
-tslib_1.__exportStar(__webpack_require__(62), exports);
-tslib_1.__exportStar(__webpack_require__(59), exports);
-tslib_1.__exportStar(__webpack_require__(19), exports);
-tslib_1.__exportStar(__webpack_require__(62), exports);
-tslib_1.__exportStar(__webpack_require__(165), exports);
+tslib_1.__exportStar(__webpack_require__(11), exports);
 tslib_1.__exportStar(__webpack_require__(61), exports);
-tslib_1.__exportStar(__webpack_require__(60), exports);
+tslib_1.__exportStar(__webpack_require__(163), exports);
+tslib_1.__exportStar(__webpack_require__(34), exports);
+tslib_1.__exportStar(__webpack_require__(168), exports);
+tslib_1.__exportStar(__webpack_require__(66), exports);
+tslib_1.__exportStar(__webpack_require__(63), exports);
+tslib_1.__exportStar(__webpack_require__(22), exports);
+tslib_1.__exportStar(__webpack_require__(66), exports);
+tslib_1.__exportStar(__webpack_require__(170), exports);
+tslib_1.__exportStar(__webpack_require__(65), exports);
+tslib_1.__exportStar(__webpack_require__(64), exports);
 
 
 /***/ }),
-/* 69 */
+/* 75 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(34), exports);
-tslib_1.__exportStar(__webpack_require__(70), exports);
-tslib_1.__exportStar(__webpack_require__(36), exports);
-tslib_1.__exportStar(__webpack_require__(22), exports);
-tslib_1.__exportStar(__webpack_require__(73), exports);
-tslib_1.__exportStar(__webpack_require__(78), exports);
-tslib_1.__exportStar(__webpack_require__(16), exports);
+tslib_1.__exportStar(__webpack_require__(38), exports);
+tslib_1.__exportStar(__webpack_require__(76), exports);
+tslib_1.__exportStar(__webpack_require__(40), exports);
+tslib_1.__exportStar(__webpack_require__(26), exports);
 tslib_1.__exportStar(__webpack_require__(79), exports);
-tslib_1.__exportStar(__webpack_require__(23), exports);
-tslib_1.__exportStar(__webpack_require__(80), exports);
-tslib_1.__exportStar(__webpack_require__(81), exports);
-tslib_1.__exportStar(__webpack_require__(82), exports);
-tslib_1.__exportStar(__webpack_require__(83), exports);
 tslib_1.__exportStar(__webpack_require__(84), exports);
+tslib_1.__exportStar(__webpack_require__(18), exports);
 tslib_1.__exportStar(__webpack_require__(85), exports);
-tslib_1.__exportStar(__webpack_require__(95), exports);
-tslib_1.__exportStar(__webpack_require__(96), exports);
-tslib_1.__exportStar(__webpack_require__(10), exports);
-tslib_1.__exportStar(__webpack_require__(97), exports);
-tslib_1.__exportStar(__webpack_require__(98), exports);
-tslib_1.__exportStar(__webpack_require__(99), exports);
-tslib_1.__exportStar(__webpack_require__(41), exports);
+tslib_1.__exportStar(__webpack_require__(27), exports);
+tslib_1.__exportStar(__webpack_require__(86), exports);
+tslib_1.__exportStar(__webpack_require__(87), exports);
+tslib_1.__exportStar(__webpack_require__(88), exports);
+tslib_1.__exportStar(__webpack_require__(89), exports);
+tslib_1.__exportStar(__webpack_require__(90), exports);
+tslib_1.__exportStar(__webpack_require__(91), exports);
 tslib_1.__exportStar(__webpack_require__(101), exports);
 tslib_1.__exportStar(__webpack_require__(102), exports);
-tslib_1.__exportStar(__webpack_require__(42), exports);
+tslib_1.__exportStar(__webpack_require__(12), exports);
 tslib_1.__exportStar(__webpack_require__(103), exports);
 tslib_1.__exportStar(__webpack_require__(104), exports);
 tslib_1.__exportStar(__webpack_require__(105), exports);
-tslib_1.__exportStar(__webpack_require__(106), exports);
-tslib_1.__exportStar(__webpack_require__(35), exports);
+tslib_1.__exportStar(__webpack_require__(45), exports);
+tslib_1.__exportStar(__webpack_require__(107), exports);
 tslib_1.__exportStar(__webpack_require__(108), exports);
+tslib_1.__exportStar(__webpack_require__(46), exports);
 tslib_1.__exportStar(__webpack_require__(109), exports);
-tslib_1.__exportStar(__webpack_require__(21), exports);
+tslib_1.__exportStar(__webpack_require__(110), exports);
+tslib_1.__exportStar(__webpack_require__(111), exports);
+tslib_1.__exportStar(__webpack_require__(112), exports);
+tslib_1.__exportStar(__webpack_require__(39), exports);
+tslib_1.__exportStar(__webpack_require__(114), exports);
+tslib_1.__exportStar(__webpack_require__(115), exports);
+tslib_1.__exportStar(__webpack_require__(25), exports);
 
 
 /***/ }),
-/* 70 */
+/* 76 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var EventGroup_1 = __webpack_require__(16);
-var scroll_1 = __webpack_require__(35);
-var dom_1 = __webpack_require__(10);
+var EventGroup_1 = __webpack_require__(18);
+var scroll_1 = __webpack_require__(39);
+var dom_1 = __webpack_require__(12);
 var SCROLL_ITERATION_DELAY = 16;
 var SCROLL_GUTTER_HEIGHT = 100;
 var MAX_SCROLL_VELOCITY = 15;
@@ -6010,20 +6549,20 @@ exports.AutoScroll = AutoScroll;
 
 
 /***/ }),
-/* 71 */
+/* 77 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 /* tslint:disable */
-var load_themed_styles_1 = __webpack_require__(5);
+var load_themed_styles_1 = __webpack_require__(7);
 load_themed_styles_1.loadStyles([{ "rawString": ".scrollDisabled_2d80166b{overflow:hidden !important}\n" }]);
 exports.scrollDisabled = "scrollDisabled_2d80166b";
 
 
 /***/ }),
-/* 72 */
+/* 78 */
 /***/ (function(module, exports) {
 
 var g;
@@ -6050,16 +6589,16 @@ module.exports = g;
 
 
 /***/ }),
-/* 73 */
+/* 79 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var PropTypes = __webpack_require__(37);
-var BaseComponent_1 = __webpack_require__(36);
+var React = __webpack_require__(1);
+var PropTypes = __webpack_require__(41);
+var BaseComponent_1 = __webpack_require__(40);
 /**
  * The Customizer component allows for default props to be mixed into components which
  * are decorated with the customizable() decorator. This enables injection scenarios like:
@@ -6116,7 +6655,7 @@ exports.Customizer = Customizer;
 
 
 /***/ }),
-/* 74 */
+/* 80 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6129,13 +6668,13 @@ exports.Customizer = Customizer;
 
 
 
-var emptyFunction = __webpack_require__(24);
-var invariant = __webpack_require__(25);
-var warning = __webpack_require__(38);
-var assign = __webpack_require__(75);
+var emptyFunction = __webpack_require__(28);
+var invariant = __webpack_require__(29);
+var warning = __webpack_require__(42);
+var assign = __webpack_require__(81);
 
-var ReactPropTypesSecret = __webpack_require__(26);
-var checkPropTypes = __webpack_require__(76);
+var ReactPropTypesSecret = __webpack_require__(30);
+var checkPropTypes = __webpack_require__(82);
 
 module.exports = function(isValidElement, throwOnDirectAccess) {
   /* global Symbol */
@@ -6663,10 +7202,10 @@ module.exports = function(isValidElement, throwOnDirectAccess) {
   return ReactPropTypes;
 };
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(11)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(13)))
 
 /***/ }),
-/* 75 */
+/* 81 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6763,7 +7302,7 @@ module.exports = shouldUseNative() ? Object.assign : function (target, source) {
 
 
 /***/ }),
-/* 76 */
+/* 82 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6777,9 +7316,9 @@ module.exports = shouldUseNative() ? Object.assign : function (target, source) {
 
 
 if (process.env.NODE_ENV !== 'production') {
-  var invariant = __webpack_require__(25);
-  var warning = __webpack_require__(38);
-  var ReactPropTypesSecret = __webpack_require__(26);
+  var invariant = __webpack_require__(29);
+  var warning = __webpack_require__(42);
+  var ReactPropTypesSecret = __webpack_require__(30);
   var loggedTypeFailures = {};
 }
 
@@ -6827,10 +7366,10 @@ function checkPropTypes(typeSpecs, values, location, componentName, getStack) {
 
 module.exports = checkPropTypes;
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(11)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(13)))
 
 /***/ }),
-/* 77 */
+/* 83 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6843,9 +7382,9 @@ module.exports = checkPropTypes;
 
 
 
-var emptyFunction = __webpack_require__(24);
-var invariant = __webpack_require__(25);
-var ReactPropTypesSecret = __webpack_require__(26);
+var emptyFunction = __webpack_require__(28);
+var invariant = __webpack_require__(29);
+var ReactPropTypesSecret = __webpack_require__(30);
 
 module.exports = function() {
   function shim(props, propName, componentName, location, propFullName, secret) {
@@ -6895,14 +7434,14 @@ module.exports = function() {
 
 
 /***/ }),
-/* 78 */
+/* 84 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
+var React = __webpack_require__(1);
 /**
  * Utility component for delaying the render of a child component after a given delay. This component
  * requires a single child component; don't pass in many components. Wrap multiple components in a DIV
@@ -6946,7 +7485,7 @@ exports.DelayedRender = DelayedRender;
 
 
 /***/ }),
-/* 79 */
+/* 85 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7004,7 +7543,7 @@ exports.FabricPerformance = FabricPerformance;
 
 
 /***/ }),
-/* 80 */
+/* 86 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7039,7 +7578,7 @@ var KeyCodes;
 
 
 /***/ }),
-/* 81 */
+/* 87 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7098,7 +7637,7 @@ exports.Rectangle = Rectangle;
 
 
 /***/ }),
-/* 82 */
+/* 88 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7218,7 +7757,7 @@ exports.flatten = flatten;
 
 
 /***/ }),
-/* 83 */
+/* 89 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7236,7 +7775,7 @@ exports.assertNever = assertNever;
 
 
 /***/ }),
-/* 84 */
+/* 90 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7283,13 +7822,13 @@ exports.autobind = autobind;
 
 
 /***/ }),
-/* 85 */
+/* 91 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var index_1 = __webpack_require__(6);
+var index_1 = __webpack_require__(9);
 /**
  * Creates a getClassNames function which calls getStyles given the props, and injects them
  * into mergeStyleSets.
@@ -7302,14 +7841,14 @@ exports.classNamesFunction = classNamesFunction;
 
 
 /***/ }),
-/* 86 */
+/* 92 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var styleToClassName_1 = __webpack_require__(17);
-var extractStyleParts_1 = __webpack_require__(39);
+var styleToClassName_1 = __webpack_require__(19);
+var extractStyleParts_1 = __webpack_require__(43);
 /**
  * Concatination helper, which can merge class names together. Skips over falsey values.
  *
@@ -7330,7 +7869,7 @@ exports.mergeStyles = mergeStyles;
 
 
 /***/ }),
-/* 87 */
+/* 93 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7343,13 +7882,13 @@ exports.kebabRules = kebabRules;
 
 
 /***/ }),
-/* 88 */
+/* 94 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var getVendorSettings_1 = __webpack_require__(89);
+var getVendorSettings_1 = __webpack_require__(95);
 var autoPrefixNames = {
     'user-select': 1
 };
@@ -7378,7 +7917,7 @@ exports.prefixRules = prefixRules;
 
 
 /***/ }),
-/* 89 */
+/* 95 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7420,7 +7959,7 @@ exports.setVendorSettings = setVendorSettings;
 
 
 /***/ }),
-/* 90 */
+/* 96 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7450,7 +7989,7 @@ exports.provideUnits = provideUnits;
 
 
 /***/ }),
-/* 91 */
+/* 97 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7537,15 +8076,15 @@ function flipQuad(value) {
 
 
 /***/ }),
-/* 92 */
+/* 98 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var extractStyleParts_1 = __webpack_require__(39);
-var concatStyleSets_1 = __webpack_require__(40);
-var styleToClassName_1 = __webpack_require__(17);
+var extractStyleParts_1 = __webpack_require__(43);
+var concatStyleSets_1 = __webpack_require__(44);
+var styleToClassName_1 = __webpack_require__(19);
 /**
  * Allows you to pass in 1 or more sets of areas which will return a merged
  * set of classes.
@@ -7592,14 +8131,14 @@ exports.mergeStyleSets = mergeStyleSets;
 
 
 /***/ }),
-/* 93 */
+/* 99 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Stylesheet_1 = __webpack_require__(13);
-var styleToClassName_1 = __webpack_require__(17);
+var Stylesheet_1 = __webpack_require__(15);
+var styleToClassName_1 = __webpack_require__(19);
 /**
  * Registers a font face.
  * @public
@@ -7611,14 +8150,14 @@ exports.fontFace = fontFace;
 
 
 /***/ }),
-/* 94 */
+/* 100 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Stylesheet_1 = __webpack_require__(13);
-var styleToClassName_1 = __webpack_require__(17);
+var Stylesheet_1 = __webpack_require__(15);
+var styleToClassName_1 = __webpack_require__(19);
 /**
  * Registers keyframe definitions.
  *
@@ -7642,7 +8181,7 @@ exports.keyframes = keyframes;
 
 
 /***/ }),
-/* 95 */
+/* 101 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7685,16 +8224,16 @@ exports.css = css;
 
 
 /***/ }),
-/* 96 */
+/* 102 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var PropTypes = __webpack_require__(37);
-var Customizations_1 = __webpack_require__(22);
+var React = __webpack_require__(1);
+var PropTypes = __webpack_require__(41);
+var Customizations_1 = __webpack_require__(26);
 function customizable(scope, fields
     // tslint:disable-next-line:no-any
 ) {
@@ -7741,14 +8280,14 @@ exports.customizable = customizable;
 
 
 /***/ }),
-/* 97 */
+/* 103 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 /* tslint:disable:no-string-literal */
 Object.defineProperty(exports, "__esModule", { value: true });
-var dom_1 = __webpack_require__(10);
+var dom_1 = __webpack_require__(12);
 var IS_FOCUSABLE_ATTRIBUTE = 'data-is-focusable';
 var IS_VISIBLE_ATTRIBUTE = 'data-is-visible';
 var FOCUSZONE_ID_ATTRIBUTE = 'data-focuszone-id';
@@ -7957,7 +8496,7 @@ exports.doesElementContainFocus = doesElementContainFocus;
 
 
 /***/ }),
-/* 98 */
+/* 104 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8019,7 +8558,7 @@ exports.unhoistMethods = unhoistMethods;
 
 
 /***/ }),
-/* 99 */
+/* 105 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8087,7 +8626,7 @@ exports.getInitials = getInitials;
 
 
 /***/ }),
-/* 100 */
+/* 106 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8125,7 +8664,7 @@ exports.setItem = setItem;
 
 
 /***/ }),
-/* 101 */
+/* 107 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8173,7 +8712,7 @@ exports.fitContentToBounds = fitContentToBounds;
 
 
 /***/ }),
-/* 102 */
+/* 108 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8282,7 +8821,7 @@ function _createNode() {
 
 
 /***/ }),
-/* 103 */
+/* 109 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8324,13 +8863,13 @@ exports.hasOverflow = hasOverflow;
 
 
 /***/ }),
-/* 104 */
+/* 110 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var object_1 = __webpack_require__(42);
+var object_1 = __webpack_require__(46);
 /**
  * An array of events that are allowed on every html element type.
  *
@@ -8604,7 +9143,7 @@ exports.getNativeProps = getNativeProps;
 
 
 /***/ }),
-/* 105 */
+/* 111 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8624,14 +9163,14 @@ exports.setBaseUrl = setBaseUrl;
 
 
 /***/ }),
-/* 106 */
+/* 112 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var dom_1 = __webpack_require__(10);
-var sessionStorage_1 = __webpack_require__(107);
+var dom_1 = __webpack_require__(12);
+var sessionStorage_1 = __webpack_require__(113);
 var RTL_LOCAL_STORAGE_KEY = 'isRTL';
 // Default to undefined so that we initialize on first read.
 var _isRTL;
@@ -8687,7 +9226,7 @@ exports.getRTLSafeKeyCode = getRTLSafeKeyCode;
 
 
 /***/ }),
-/* 107 */
+/* 113 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8725,7 +9264,7 @@ exports.setItem = setItem;
 
 
 /***/ }),
-/* 108 */
+/* 114 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8769,15 +9308,15 @@ exports.format = format;
 
 
 /***/ }),
-/* 109 */
+/* 115 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var index_1 = __webpack_require__(6);
+var React = __webpack_require__(1);
+var index_1 = __webpack_require__(9);
 /**
  * The styled HOC wrapper allows you to create a functional wrapper around a given component which will resolve
  * getStyles functional props, and mix customized props passed in using concatStyleSets. Example:
@@ -8803,19 +9342,19 @@ exports.styled = styled;
 
 
 /***/ }),
-/* 110 */
+/* 116 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(111), exports);
-tslib_1.__exportStar(__webpack_require__(43), exports);
+tslib_1.__exportStar(__webpack_require__(117), exports);
+tslib_1.__exportStar(__webpack_require__(47), exports);
 
 
 /***/ }),
-/* 111 */
+/* 117 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8823,13 +9362,13 @@ tslib_1.__exportStar(__webpack_require__(43), exports);
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 /* tslint:disable */
-var React = __webpack_require__(2);
+var React = __webpack_require__(1);
 /* tslint:enable */
-var Icon_types_1 = __webpack_require__(43);
-var Image_1 = __webpack_require__(44);
-var Utilities_1 = __webpack_require__(1);
+var Icon_types_1 = __webpack_require__(47);
+var Image_1 = __webpack_require__(48);
+var Utilities_1 = __webpack_require__(2);
 var Styling_1 = __webpack_require__(3);
-var Icon_classNames_1 = __webpack_require__(125);
+var Icon_classNames_1 = __webpack_require__(131);
 exports.Icon = function (props) {
     var ariaLabel = props.ariaLabel, className = props.className, styles = props.styles, iconName = props.iconName;
     var classNames = Icon_classNames_1.getClassNames(styles);
@@ -8862,40 +9401,40 @@ exports.Icon = function (props) {
 
 
 /***/ }),
-/* 112 */
+/* 118 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var AnimationClassNames_1 = __webpack_require__(113);
+var AnimationClassNames_1 = __webpack_require__(119);
 exports.AnimationClassNames = AnimationClassNames_1.AnimationClassNames;
-var FontClassNames_1 = __webpack_require__(122);
+var FontClassNames_1 = __webpack_require__(128);
 exports.FontClassNames = FontClassNames_1.FontClassNames;
-var ColorClassNames_1 = __webpack_require__(123);
+var ColorClassNames_1 = __webpack_require__(129);
 exports.ColorClassNames = ColorClassNames_1.ColorClassNames;
 
 
 /***/ }),
-/* 113 */
+/* 119 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var index_1 = __webpack_require__(27);
-var index_2 = __webpack_require__(18);
+var index_1 = __webpack_require__(31);
+var index_2 = __webpack_require__(20);
 exports.AnimationClassNames = index_1.buildClassMap(index_2.AnimationStyles);
 
 
 /***/ }),
-/* 114 */
+/* 120 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var MergeStyles_1 = __webpack_require__(46);
+var MergeStyles_1 = __webpack_require__(50);
 /**
  * Builds a class names object from a given map.
  *
@@ -8929,14 +9468,14 @@ exports.buildClassMap = buildClassMap;
 
 
 /***/ }),
-/* 115 */
+/* 121 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var index_1 = __webpack_require__(6);
-var icons_1 = __webpack_require__(47);
+var index_1 = __webpack_require__(9);
+var icons_1 = __webpack_require__(51);
 var defaultIconStyles = {
     display: 'inline-block'
 };
@@ -8964,13 +9503,13 @@ exports.getIconClassName = getIconClassName;
 
 
 /***/ }),
-/* 116 */
+/* 122 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var index_1 = __webpack_require__(6);
+var index_1 = __webpack_require__(9);
 /* Register the keyframes */
 var EASING_FUNCTION_1 = 'cubic-bezier(.1,.9,.2,1)';
 var EASING_FUNCTION_2 = 'cubic-bezier(.1,.25,.75,.9)';
@@ -9125,7 +9664,7 @@ function _createSlideOutY(toY) {
 
 
 /***/ }),
-/* 117 */
+/* 123 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9169,7 +9708,7 @@ exports.getFocusStyle = getFocusStyle;
 
 
 /***/ }),
-/* 118 */
+/* 124 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9187,17 +9726,17 @@ exports.hiddenContentStyle = {
 
 
 /***/ }),
-/* 119 */
+/* 125 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var Customizations_1 = __webpack_require__(22);
-var DefaultFontStyles_1 = __webpack_require__(48);
-var DefaultPalette_1 = __webpack_require__(28);
-var load_themed_styles_1 = __webpack_require__(5);
+var Customizations_1 = __webpack_require__(26);
+var DefaultFontStyles_1 = __webpack_require__(52);
+var DefaultPalette_1 = __webpack_require__(32);
+var load_themed_styles_1 = __webpack_require__(7);
 var _theme = {
     palette: DefaultPalette_1.DefaultPalette,
     semanticColors: _makeSemanticColorsFromPalette(DefaultPalette_1.DefaultPalette, false),
@@ -9333,7 +9872,7 @@ var _a;
 
 
 /***/ }),
-/* 120 */
+/* 126 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9354,7 +9893,7 @@ exports.ScreenWidthMaxXXLarge = exports.ScreenWidthMinXXXLarge - 1;
 
 
 /***/ }),
-/* 121 */
+/* 127 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9370,27 +9909,27 @@ exports.normalize = {
 
 
 /***/ }),
-/* 122 */
+/* 128 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var index_1 = __webpack_require__(27);
-var index_2 = __webpack_require__(18);
+var index_1 = __webpack_require__(31);
+var index_2 = __webpack_require__(20);
 exports.FontClassNames = index_1.buildClassMap(index_2.DefaultFontStyles);
 
 
 /***/ }),
-/* 123 */
+/* 129 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var index_1 = __webpack_require__(6);
-var DefaultPalette_1 = __webpack_require__(28);
-var index_2 = __webpack_require__(18);
+var index_1 = __webpack_require__(9);
+var DefaultPalette_1 = __webpack_require__(32);
+var index_2 = __webpack_require__(20);
 exports.ColorClassNames = {};
 for (var colorName in DefaultPalette_1.DefaultPalette) {
     if (DefaultPalette_1.DefaultPalette.hasOwnProperty(colorName)) {
@@ -9426,14 +9965,14 @@ function _defineGetter(obj, colorName, suffix, isHover, cssProperty) {
 
 
 /***/ }),
-/* 124 */
+/* 130 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 /* tslint:disable */
-var load_themed_styles_1 = __webpack_require__(5);
+var load_themed_styles_1 = __webpack_require__(7);
 load_themed_styles_1.loadStyles([{ "rawString": ".root_e7b134f9{overflow:hidden}.rootIsMaximizeFrame_e7b134f9{height:100%;width:100%}.image_e7b134f9{display:block;opacity:0}.image_e7b134f9.imageIsLoaded_e7b134f9{opacity:1}.imageIsCenter_e7b134f9,.imageIsContain_e7b134f9,.imageIsCover_e7b134f9{position:relative;top:50%}[dir='ltr'] .imageIsCenter_e7b134f9,[dir='ltr'] .imageIsContain_e7b134f9,[dir='ltr'] .imageIsCover_e7b134f9{left:50%}[dir='rtl'] .imageIsCenter_e7b134f9,[dir='rtl'] .imageIsContain_e7b134f9,[dir='rtl'] .imageIsCover_e7b134f9{right:50%}html[dir='ltr'] .imageIsCenter_e7b134f9,html[dir='ltr'] .imageIsContain_e7b134f9,html[dir='ltr'] .imageIsCover_e7b134f9{-webkit-transform:translate(-50%, -50%);transform:translate(-50%, -50%)}html[dir='rtl'] .imageIsCenter_e7b134f9,html[dir='rtl'] .imageIsContain_e7b134f9,html[dir='rtl'] .imageIsCover_e7b134f9{-webkit-transform:translate(50%, -50%);transform:translate(50%, -50%)}.imageIsContain_e7b134f9.imageIsLandscape_e7b134f9{width:100%;height:auto}.imageIsContain_e7b134f9.imageIsPortrait_e7b134f9{height:100%;width:auto}.imageIsCover_e7b134f9.imageIsLandscape_e7b134f9{height:100%;width:auto}.imageIsCover_e7b134f9.imageIsPortrait_e7b134f9{width:100%;height:auto}.imageIsNone_e7b134f9{height:auto;width:auto}.imageIsScaleWidthHeight_e7b134f9{height:100%;width:100%}.imageIsScaleWidth_e7b134f9{height:auto;width:100%}.imageIsScaleHeight_e7b134f9{height:100%;width:auto}\n" }]);
 exports.root = "root_e7b134f9";
 exports.rootIsMaximizeFrame = "rootIsMaximizeFrame_e7b134f9";
@@ -9451,14 +9990,14 @@ exports.imageIsScaleHeight = "imageIsScaleHeight_e7b134f9";
 
 
 /***/ }),
-/* 125 */
+/* 131 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var Styling_1 = __webpack_require__(3);
-var Utilities_1 = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
 exports.getClassNames = Utilities_1.memoizeFunction(function (customStyles) {
     return Styling_1.mergeStyleSets({
         root: {
@@ -9475,45 +10014,45 @@ exports.getClassNames = Utilities_1.memoizeFunction(function (customStyles) {
 
 
 /***/ }),
-/* 126 */
+/* 132 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(127), exports);
+tslib_1.__exportStar(__webpack_require__(133), exports);
 
 
 /***/ }),
-/* 127 */
+/* 133 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(128), exports);
-tslib_1.__exportStar(__webpack_require__(50), exports);
+tslib_1.__exportStar(__webpack_require__(134), exports);
+tslib_1.__exportStar(__webpack_require__(54), exports);
 
 
 /***/ }),
-/* 128 */
+/* 134 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var ContextualMenu_types_1 = __webpack_require__(50);
-var FocusZone_1 = __webpack_require__(52);
-var ContextualMenu_classNames_1 = __webpack_require__(131);
-var Utilities_1 = __webpack_require__(1);
-var withResponsiveMode_1 = __webpack_require__(133);
-var Callout_1 = __webpack_require__(135);
-var Icon_1 = __webpack_require__(14);
-var Divider_1 = __webpack_require__(153);
+var React = __webpack_require__(1);
+var ContextualMenu_types_1 = __webpack_require__(54);
+var FocusZone_1 = __webpack_require__(21);
+var ContextualMenu_classNames_1 = __webpack_require__(137);
+var Utilities_1 = __webpack_require__(2);
+var withResponsiveMode_1 = __webpack_require__(139);
+var Callout_1 = __webpack_require__(58);
+var Icon_1 = __webpack_require__(8);
+var Divider_1 = __webpack_require__(158);
 function hasSubmenuItems(item) {
     var submenuItems = getSubmenuItems(item);
     return !!(submenuItems && submenuItems.length);
@@ -10158,28 +10697,28 @@ exports.ContextualMenu = ContextualMenu;
 
 
 /***/ }),
-/* 129 */
+/* 135 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(130), exports);
-tslib_1.__exportStar(__webpack_require__(53), exports);
+tslib_1.__exportStar(__webpack_require__(136), exports);
+tslib_1.__exportStar(__webpack_require__(56), exports);
 
 
 /***/ }),
-/* 130 */
+/* 136 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var FocusZone_types_1 = __webpack_require__(53);
-var Utilities_1 = __webpack_require__(1);
+var React = __webpack_require__(1);
+var FocusZone_types_1 = __webpack_require__(56);
+var Utilities_1 = __webpack_require__(2);
 var IS_FOCUSABLE_ATTRIBUTE = 'data-is-focusable';
 var IS_ENTER_DISABLED_ATTRIBUTE = 'data-disable-click-on-enter';
 var FOCUSZONE_ID_ATTRIBUTE = 'data-focuszone-id';
@@ -10791,16 +11330,16 @@ exports.FocusZone = FocusZone;
 
 
 /***/ }),
-/* 131 */
+/* 137 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Utilities_1 = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
 var Styling_1 = __webpack_require__(3);
-var ContextualMenu_styles_1 = __webpack_require__(132);
-var VerticalDivider_classNames_1 = __webpack_require__(54);
+var ContextualMenu_styles_1 = __webpack_require__(138);
+var VerticalDivider_classNames_1 = __webpack_require__(57);
 exports.getSplitButtonVerticalDividerClassNames = Utilities_1.memoizeFunction(function (theme) {
     var semanticColors = theme.semanticColors;
     var ContextualMenuDividerColor = semanticColors.bodyDivider;
@@ -10958,7 +11497,7 @@ exports.getItemClassNames = Utilities_1.memoizeFunction(function (theme, disable
 
 
 /***/ }),
-/* 132 */
+/* 138 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10966,7 +11505,7 @@ exports.getItemClassNames = Utilities_1.memoizeFunction(function (theme, disable
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 var Styling_1 = __webpack_require__(3);
-var Utilities_1 = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
 var ContextualMenuItemHeight = '32px';
 var getItemHighContrastStyles = Utilities_1.memoizeFunction(function () {
     return {
@@ -11145,16 +11684,16 @@ exports.getStyles = Utilities_1.memoizeFunction(function (theme) {
 
 
 /***/ }),
-/* 133 */
+/* 139 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var BaseDecorator_1 = __webpack_require__(134);
-var Utilities_1 = __webpack_require__(1);
+var React = __webpack_require__(1);
+var BaseDecorator_1 = __webpack_require__(140);
+var Utilities_1 = __webpack_require__(2);
 var ResponsiveMode;
 (function (ResponsiveMode) {
     ResponsiveMode[ResponsiveMode["small"] = 0] = "small";
@@ -11241,14 +11780,14 @@ exports.withResponsiveMode = withResponsiveMode;
 
 
 /***/ }),
-/* 134 */
+/* 140 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var Utilities_1 = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
 var BaseDecorator = /** @class */ (function (_super) {
     tslib_1.__extends(BaseDecorator, _super);
     function BaseDecorator(props) {
@@ -11278,30 +11817,19 @@ exports.BaseDecorator = BaseDecorator;
 
 
 /***/ }),
-/* 135 */
+/* 141 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(136), exports);
+tslib_1.__exportStar(__webpack_require__(142), exports);
+tslib_1.__exportStar(__webpack_require__(55), exports);
 
 
 /***/ }),
-/* 136 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(137), exports);
-tslib_1.__exportStar(__webpack_require__(51), exports);
-
-
-/***/ }),
-/* 137 */
+/* 142 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -11309,11 +11837,11 @@ tslib_1.__exportStar(__webpack_require__(51), exports);
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 /* tslint:disable:no-unused-variable */
-var React = __webpack_require__(2);
+var React = __webpack_require__(1);
 /* tslint:enable:no-unused-variable */
-var Utilities_1 = __webpack_require__(1);
-var CalloutContent_1 = __webpack_require__(138);
-var Layer_1 = __webpack_require__(145);
+var Utilities_1 = __webpack_require__(2);
+var CalloutContent_1 = __webpack_require__(143);
+var Layer_1 = __webpack_require__(150);
 var Callout = /** @class */ (function (_super) {
     tslib_1.__extends(Callout, _super);
     function Callout(props) {
@@ -11334,7 +11862,7 @@ exports.Callout = Callout;
 
 
 /***/ }),
-/* 138 */
+/* 143 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -11342,11 +11870,11 @@ exports.Callout = Callout;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 /* tslint:disable:no-unused-variable */
-var React = __webpack_require__(2);
-var Utilities_1 = __webpack_require__(1);
-var positioning_1 = __webpack_require__(139);
-var Popup_1 = __webpack_require__(56);
-var stylesImport = __webpack_require__(144);
+var React = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
+var positioning_1 = __webpack_require__(144);
+var Popup_1 = __webpack_require__(60);
+var stylesImport = __webpack_require__(149);
 var Styling_1 = __webpack_require__(3);
 var styles = stylesImport;
 var BEAK_ORIGIN_POSITION = { top: 0, left: 0 };
@@ -11657,38 +12185,38 @@ var _a;
 
 
 /***/ }),
-/* 139 */
+/* 144 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(140), exports);
+tslib_1.__exportStar(__webpack_require__(145), exports);
 
 
 /***/ }),
-/* 140 */
+/* 145 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(141), exports);
-tslib_1.__exportStar(__webpack_require__(55), exports);
+tslib_1.__exportStar(__webpack_require__(146), exports);
+tslib_1.__exportStar(__webpack_require__(59), exports);
 
 
 /***/ }),
-/* 141 */
+/* 146 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var Utilities_1 = __webpack_require__(1);
-var positioning_types_1 = __webpack_require__(55);
+var Utilities_1 = __webpack_require__(2);
+var positioning_types_1 = __webpack_require__(59);
 var Rectangle = /** @class */ (function (_super) {
     tslib_1.__extends(Rectangle, _super);
     function Rectangle() {
@@ -12325,26 +12853,26 @@ var _a, _b;
 
 
 /***/ }),
-/* 142 */
+/* 147 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(143), exports);
+tslib_1.__exportStar(__webpack_require__(148), exports);
 
 
 /***/ }),
-/* 143 */
+/* 148 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var Utilities_1 = __webpack_require__(1);
+var React = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
 /**
  * This adds accessibility to Dialog and Panel controls
  */
@@ -12409,14 +12937,14 @@ exports.Popup = Popup;
 
 
 /***/ }),
-/* 144 */
+/* 149 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 /* tslint:disable */
-var load_themed_styles_1 = __webpack_require__(5);
+var load_themed_styles_1 = __webpack_require__(7);
 load_themed_styles_1.loadStyles([{ "rawString": ".root_fcaa28b3{position:absolute;-webkit-box-sizing:border-box;box-sizing:border-box;border:1px solid " }, { "theme": "neutralLight", "defaultValue": "#eaeaea" }, { "rawString": "}[dir='ltr'] .root_fcaa28b3{-webkit-box-shadow:0 0 5px 0px rgba(0,0,0,0.4);box-shadow:0 0 5px 0px rgba(0,0,0,0.4)}[dir='rtl'] .root_fcaa28b3{-webkit-box-shadow:0 0 5px 0px rgba(0,0,0,0.4);box-shadow:0 0 5px 0px rgba(0,0,0,0.4)}.root_fcaa28b3::-moz-focus-inner{border:0}.root_fcaa28b3{outline:transparent}@media screen and (-ms-high-contrast: active){.root_fcaa28b3{border:1px solid WindowText}}.container_fcaa28b3{position:relative}.main_fcaa28b3{background-color:" }, { "theme": "white", "defaultValue": "#ffffff" }, { "rawString": ";overflow-x:hidden;overflow-y:auto;position:relative}.overFlowYHidden_fcaa28b3{overflow-y:hidden}.beak_fcaa28b3{position:absolute;background-color:" }, { "theme": "white", "defaultValue": "#ffffff" }, { "rawString": ";-webkit-box-shadow:inherit;box-shadow:inherit;border:inherit;-webkit-box-sizing:border-box;box-sizing:border-box;-webkit-transform:rotate(45deg);transform:rotate(45deg)}.beakCurtain_fcaa28b3{position:absolute;top:0;right:0;bottom:0;left:0;background-color:" }, { "theme": "white", "defaultValue": "#ffffff" }, { "rawString": "}\n" }]);
 exports.root = "root_fcaa28b3";
 exports.container = "container_fcaa28b3";
@@ -12427,61 +12955,61 @@ exports.beakCurtain = "beakCurtain_fcaa28b3";
 
 
 /***/ }),
-/* 145 */
+/* 150 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(146), exports);
+tslib_1.__exportStar(__webpack_require__(151), exports);
 
 
 /***/ }),
-/* 146 */
+/* 151 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(29), exports);
-tslib_1.__exportStar(__webpack_require__(152), exports);
+tslib_1.__exportStar(__webpack_require__(33), exports);
+tslib_1.__exportStar(__webpack_require__(157), exports);
 
 
 /***/ }),
-/* 147 */
+/* 152 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(148), exports);
+tslib_1.__exportStar(__webpack_require__(153), exports);
 
 
 /***/ }),
-/* 148 */
+/* 153 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(149), exports);
+tslib_1.__exportStar(__webpack_require__(154), exports);
 
 
 /***/ }),
-/* 149 */
+/* 154 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var Utilities_1 = __webpack_require__(1);
-var Fabric_classNames_1 = __webpack_require__(150);
+var React = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
+var Fabric_classNames_1 = __webpack_require__(155);
 var DIRECTIONAL_KEY_CODES = [
     38 /* up */,
     40 /* down */,
@@ -12545,13 +13073,13 @@ exports.Fabric = Fabric;
 
 
 /***/ }),
-/* 150 */
+/* 155 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Utilities_1 = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
 var Styling_1 = __webpack_require__(3);
 var inheritFont = { fontFamily: 'inherit' };
 exports.getClassNames = Utilities_1.memoizeFunction(function (theme, className, isFocusVisible) {
@@ -12575,30 +13103,30 @@ exports.getClassNames = Utilities_1.memoizeFunction(function (theme, className, 
 
 
 /***/ }),
-/* 151 */
+/* 156 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 /* tslint:disable */
-var load_themed_styles_1 = __webpack_require__(5);
+var load_themed_styles_1 = __webpack_require__(7);
 load_themed_styles_1.loadStyles([{ "rawString": ".rootIsFixed_6d9ef549{position:fixed;z-index:1000000;top:0;left:0;width:100vw;height:100vh;visibility:hidden}.content_6d9ef549{visibility:visible}\n" }]);
 exports.rootIsFixed = "rootIsFixed_6d9ef549";
 exports.content = "content_6d9ef549";
 
 
 /***/ }),
-/* 152 */
+/* 157 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var Utilities_1 = __webpack_require__(1);
-var Layer_1 = __webpack_require__(29);
+var React = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
+var Layer_1 = __webpack_require__(33);
 var LayerHost = /** @class */ (function (_super) {
     tslib_1.__extends(LayerHost, _super);
     function LayerHost() {
@@ -12622,36 +13150,36 @@ exports.LayerHost = LayerHost;
 
 
 /***/ }),
-/* 153 */
+/* 158 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(154), exports);
+tslib_1.__exportStar(__webpack_require__(159), exports);
 
 
 /***/ }),
-/* 154 */
+/* 159 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(155), exports);
+tslib_1.__exportStar(__webpack_require__(160), exports);
 
 
 /***/ }),
-/* 155 */
+/* 160 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var React = __webpack_require__(2);
-var VerticalDivider_classNames_1 = __webpack_require__(54);
+var React = __webpack_require__(1);
+var VerticalDivider_classNames_1 = __webpack_require__(57);
 var Styling_1 = __webpack_require__(3);
 exports.VerticalDivider = function (props) {
     var theme = Styling_1.getTheme();
@@ -12662,13 +13190,13 @@ exports.VerticalDivider = function (props) {
 
 
 /***/ }),
-/* 156 */
+/* 161 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Utilities_1 = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
 var Styling_1 = __webpack_require__(3);
 exports.getBaseButtonClassNames = Utilities_1.memoizeFunction(function (styles, className, variantClassName, iconClassName, menuIconClassName, disabled, checked, expanded, isSplit) {
     var isExpanded = expanded && !isSplit;
@@ -12781,13 +13309,13 @@ exports.getBaseButtonClassNames = Utilities_1.memoizeFunction(function (styles, 
 
 
 /***/ }),
-/* 157 */
+/* 162 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Utilities_1 = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
 var Styling_1 = __webpack_require__(3);
 exports.getClassNames = Utilities_1.memoizeFunction(function (styles, disabled, expanded, checked) {
     return {
@@ -12819,7 +13347,7 @@ exports.getClassNames = Utilities_1.memoizeFunction(function (styles, disabled, 
 
 
 /***/ }),
-/* 158 */
+/* 163 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -12827,15 +13355,15 @@ exports.getClassNames = Utilities_1.memoizeFunction(function (styles, disabled, 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 /* tslint:disable:no-unused-variable */
-var React = __webpack_require__(2);
+var React = __webpack_require__(1);
 /* tslint:enable:no-unused-variable */
-var Utilities_1 = __webpack_require__(1);
-var Button_types_1 = __webpack_require__(57);
-var DefaultButton_1 = __webpack_require__(19);
-var ActionButton_1 = __webpack_require__(30);
-var CompoundButton_1 = __webpack_require__(59);
-var IconButton_1 = __webpack_require__(60);
-var PrimaryButton_1 = __webpack_require__(61);
+var Utilities_1 = __webpack_require__(2);
+var Button_types_1 = __webpack_require__(61);
+var DefaultButton_1 = __webpack_require__(22);
+var ActionButton_1 = __webpack_require__(34);
+var CompoundButton_1 = __webpack_require__(63);
+var IconButton_1 = __webpack_require__(64);
+var PrimaryButton_1 = __webpack_require__(65);
 /**
  * This class is deprecated. Use the individual *Button components instead.
  * @deprecated
@@ -12873,17 +13401,17 @@ exports.Button = Button;
 
 
 /***/ }),
-/* 159 */
+/* 164 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var Styling_1 = __webpack_require__(3);
-var Utilities_1 = __webpack_require__(1);
-var BaseButton_styles_1 = __webpack_require__(12);
-var SplitButton_styles_1 = __webpack_require__(20);
-var ButtonThemes_1 = __webpack_require__(58);
+var Utilities_1 = __webpack_require__(2);
+var BaseButton_styles_1 = __webpack_require__(14);
+var SplitButton_styles_1 = __webpack_require__(23);
+var ButtonThemes_1 = __webpack_require__(62);
 var DEFAULT_BUTTON_HEIGHT = '32px';
 var DEFAULT_BUTTON_MINWIDTH = '80px';
 exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles, primary) {
@@ -12903,15 +13431,15 @@ exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles, p
 
 
 /***/ }),
-/* 160 */
+/* 165 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var Styling_1 = __webpack_require__(3);
-var Utilities_1 = __webpack_require__(1);
-var BaseButton_styles_1 = __webpack_require__(12);
+var Utilities_1 = __webpack_require__(2);
+var BaseButton_styles_1 = __webpack_require__(14);
 var DEFAULT_BUTTON_HEIGHT = '40px';
 var DEFAULT_PADDING = '0 4px';
 exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles) {
@@ -12969,17 +13497,17 @@ exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles) {
 
 
 /***/ }),
-/* 161 */
+/* 166 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var Styling_1 = __webpack_require__(3);
-var Utilities_1 = __webpack_require__(1);
-var BaseButton_styles_1 = __webpack_require__(12);
-var SplitButton_styles_1 = __webpack_require__(20);
-var ButtonThemes_1 = __webpack_require__(58);
+var Utilities_1 = __webpack_require__(2);
+var BaseButton_styles_1 = __webpack_require__(14);
+var SplitButton_styles_1 = __webpack_require__(23);
+var ButtonThemes_1 = __webpack_require__(62);
 exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles, primary) {
     var baseButtonStyles = BaseButton_styles_1.getStyles(theme);
     var splitButtonStyles = SplitButton_styles_1.getStyles(theme);
@@ -13073,16 +13601,16 @@ exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles, p
 
 
 /***/ }),
-/* 162 */
+/* 167 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var Styling_1 = __webpack_require__(3);
-var Utilities_1 = __webpack_require__(1);
-var BaseButton_styles_1 = __webpack_require__(12);
-var SplitButton_styles_1 = __webpack_require__(20);
+var Utilities_1 = __webpack_require__(2);
+var BaseButton_styles_1 = __webpack_require__(14);
+var SplitButton_styles_1 = __webpack_require__(23);
 exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles) {
     var baseButtonStyles = BaseButton_styles_1.getStyles(theme);
     var splitButtonStyles = SplitButton_styles_1.getStyles(theme);
@@ -13117,17 +13645,17 @@ exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles) {
 
 
 /***/ }),
-/* 163 */
+/* 168 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var BaseButton_1 = __webpack_require__(9);
-var Utilities_1 = __webpack_require__(1);
-var CommandBarButton_styles_1 = __webpack_require__(164);
+var React = __webpack_require__(1);
+var BaseButton_1 = __webpack_require__(11);
+var Utilities_1 = __webpack_require__(2);
+var CommandBarButton_styles_1 = __webpack_require__(169);
 var CommandBarButton = /** @class */ (function (_super) {
     tslib_1.__extends(CommandBarButton, _super);
     function CommandBarButton() {
@@ -13151,16 +13679,16 @@ exports.CommandBarButton = CommandBarButton;
 
 
 /***/ }),
-/* 164 */
+/* 169 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var Styling_1 = __webpack_require__(3);
-var Utilities_1 = __webpack_require__(1);
-var BaseButton_styles_1 = __webpack_require__(12);
-var SplitButton_styles_1 = __webpack_require__(20);
+var Utilities_1 = __webpack_require__(2);
+var BaseButton_styles_1 = __webpack_require__(14);
+var SplitButton_styles_1 = __webpack_require__(23);
 exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles, focusInset, focusColor) {
     var baseButtonStyles = BaseButton_styles_1.getStyles(theme);
     var baseSplitButtonStyles = SplitButton_styles_1.getStyles(theme);
@@ -13206,17 +13734,17 @@ exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles, f
 
 
 /***/ }),
-/* 165 */
+/* 170 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var DefaultButton_1 = __webpack_require__(19);
-var Utilities_1 = __webpack_require__(1);
-var MessageBarButton_styles_1 = __webpack_require__(166);
+var React = __webpack_require__(1);
+var DefaultButton_1 = __webpack_require__(22);
+var Utilities_1 = __webpack_require__(2);
+var MessageBarButton_styles_1 = __webpack_require__(171);
 var MessageBarButton = /** @class */ (function (_super) {
     tslib_1.__extends(MessageBarButton, _super);
     function MessageBarButton() {
@@ -13235,15 +13763,15 @@ exports.MessageBarButton = MessageBarButton;
 
 
 /***/ }),
-/* 166 */
+/* 171 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var Styling_1 = __webpack_require__(3);
-var Utilities_1 = __webpack_require__(1);
-var BaseButton_styles_1 = __webpack_require__(12);
+var Utilities_1 = __webpack_require__(2);
+var BaseButton_styles_1 = __webpack_require__(14);
 exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles, focusInset, focusColor) {
     var baseButtonStyles = BaseButton_styles_1.getStyles(theme);
     var messageBarButtonStyles = {
@@ -13265,52 +13793,52 @@ exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles, f
 
 
 /***/ }),
-/* 167 */
+/* 172 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(168), exports);
+tslib_1.__exportStar(__webpack_require__(173), exports);
 
 
 /***/ }),
-/* 168 */
+/* 173 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(169), exports);
+tslib_1.__exportStar(__webpack_require__(174), exports);
 
 
 /***/ }),
-/* 169 */
+/* 174 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Utilities_1 = __webpack_require__(1);
-var SearchBox_base_1 = __webpack_require__(170);
-var SearchBox_styles_1 = __webpack_require__(171);
+var Utilities_1 = __webpack_require__(2);
+var SearchBox_base_1 = __webpack_require__(175);
+var SearchBox_styles_1 = __webpack_require__(176);
 exports.SearchBox = Utilities_1.styled(SearchBox_base_1.SearchBoxBase, SearchBox_styles_1.getStyles);
 
 
 /***/ }),
-/* 170 */
+/* 175 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var Utilities_1 = __webpack_require__(1);
-var Button_1 = __webpack_require__(15);
-var Icon_1 = __webpack_require__(14);
+var React = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
+var Button_1 = __webpack_require__(17);
+var Icon_1 = __webpack_require__(8);
 var getClassNames = Utilities_1.classNamesFunction();
 var SearchBoxBase = /** @class */ (function (_super) {
     tslib_1.__extends(SearchBoxBase, _super);
@@ -13462,7 +13990,7 @@ exports.SearchBoxBase = SearchBoxBase;
 
 
 /***/ }),
-/* 171 */
+/* 176 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -13616,41 +14144,41 @@ exports.getStyles = getStyles;
 
 
 /***/ }),
-/* 172 */
+/* 177 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(173), exports);
+tslib_1.__exportStar(__webpack_require__(178), exports);
 
 
 /***/ }),
-/* 173 */
+/* 178 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(174), exports);
+tslib_1.__exportStar(__webpack_require__(179), exports);
 
 
 /***/ }),
-/* 174 */
+/* 179 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var Utilities_1 = __webpack_require__(1);
-var FocusZone_1 = __webpack_require__(52);
-var Button_1 = __webpack_require__(15);
-var Icon_1 = __webpack_require__(14);
-var stylesImport = __webpack_require__(175);
+var React = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
+var FocusZone_1 = __webpack_require__(21);
+var Button_1 = __webpack_require__(17);
+var Icon_1 = __webpack_require__(8);
+var stylesImport = __webpack_require__(180);
 var styles = stylesImport;
 var Styling_1 = __webpack_require__(3);
 // The number pixels per indentation level for Nav links.
@@ -13876,14 +14404,14 @@ exports.Nav = Nav;
 
 
 /***/ }),
-/* 175 */
+/* 180 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 /* tslint:disable */
-var load_themed_styles_1 = __webpack_require__(5);
+var load_themed_styles_1 = __webpack_require__(7);
 load_themed_styles_1.loadStyles([{ "rawString": ".root_4781cc33{overflow-y:auto;-webkit-overflow-scrolling:touch;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.rootIsOnTop_4781cc33{position:absolute}.navItems_4781cc33{list-style-type:none}.navItems_4781cc33,.navItems_4781cc33>.navItem_4781cc33{padding:0}.groupContent_4781cc33{display:none;margin-bottom:40px}.group_4781cc33.groupIsExpanded_4781cc33 .groupContent_4781cc33{display:block}.icon_4781cc33{padding:0px;color:" }, { "theme": "neutralPrimary", "defaultValue": "#333333" }, { "rawString": ";background:" }, { "theme": "neutralLighter", "defaultValue": "#f4f4f4" }, { "rawString": ";-webkit-transition:-webkit-transform .1s linear;transition:-webkit-transform .1s linear;transition:transform .1s linear;transition:transform .1s linear, -webkit-transform .1s linear}[dir='ltr'] .iconLink_4781cc33{margin-right:4px}[dir='rtl'] .iconLink_4781cc33{margin-left:4px}.chevronButton_4781cc33{display:block;font-weight:400;font-size:12px;line-height:36px;margin:5px 0;padding:0px 20px 0px 28px;background:none;border:none;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;cursor:pointer;color:" }, { "theme": "bodyText", "defaultValue": "#333333" }, { "rawString": ";background:" }, { "theme": "bodyBackground", "defaultValue": "#ffffff" }, { "rawString": "}html[dir='ltr'] .chevronButton_4781cc33{text-align:left}html[dir='rtl'] .chevronButton_4781cc33{text-align:right}html[dir='rtl'] .chevronButton_4781cc33{padding:0px 28px 0px 20px}.chevronButton_4781cc33:visited{color:inherit}.chevronButton_4781cc33:hover{color:" }, { "theme": "bodyText", "defaultValue": "#333333" }, { "rawString": ";background:" }, { "theme": "neutralLighterAlt", "defaultValue": "#f8f8f8" }, { "rawString": "}.chevronButton_4781cc33.chevronButtonIsGroup_4781cc33{width:100%;height:36px;border-bottom:1px solid " }, { "theme": "bodyDivider", "defaultValue": "#eaeaea" }, { "rawString": "}.chevronIcon_4781cc33{position:absolute;height:36px;line-height:36px;font-size:12px;-webkit-transition:-webkit-transform .1s linear;transition:-webkit-transform .1s linear;transition:transform .1s linear;transition:transform .1s linear, -webkit-transform .1s linear}[dir='ltr'] .chevronIcon_4781cc33{left:8px}[dir='rtl'] .chevronIcon_4781cc33{right:8px}.chevronIsExpanded_4781cc33{-webkit-transform:rotate(-180deg);transform:rotate(-180deg)}.linkText_4781cc33{margin:0 4px;overflow:hidden;vertical-align:middle;text-overflow:ellipsis}.compositeLink_4781cc33{display:block;position:relative;color:" }, { "theme": "bodyText", "defaultValue": "#333333" }, { "rawString": ";background:" }, { "theme": "bodyBackground", "defaultValue": "#ffffff" }, { "rawString": "}.compositeLink_4781cc33 .chevronButton_4781cc33.chevronButtonLink_4781cc33{display:block;width:26px;height:34px;position:absolute;top:1px;z-index:1;padding:0;margin:0}.compositeLink_4781cc33 .chevronButton_4781cc33.chevronButtonLink_4781cc33 .chevronIcon_4781cc33{top:0}.compositeLink_4781cc33:hover .link_4781cc33,.compositeLink_4781cc33:hover .chevronButton_4781cc33{background:" }, { "theme": "neutralLighterAlt", "defaultValue": "#f8f8f8" }, { "rawString": ";color:" }, { "theme": "bodyText", "defaultValue": "#333333" }, { "rawString": "}.compositeLink_4781cc33.compositeLinkIsExpanded_4781cc33 .chevronIcon_4781cc33{-webkit-transform:rotate(-180deg);transform:rotate(-180deg)}.compositeLink_4781cc33.compositeLinkIsSelected_4781cc33 .link_4781cc33,.compositeLink_4781cc33.compositeLinkIsSelected_4781cc33 .chevronButton_4781cc33{color:" }, { "theme": "themePrimary", "defaultValue": "#0078d7" }, { "rawString": ";background:" }, { "theme": "neutralLighter", "defaultValue": "#f4f4f4" }, { "rawString": "}.compositeLink_4781cc33.compositeLinkIsSelected_4781cc33 .link_4781cc33:after,.compositeLink_4781cc33.compositeLinkIsSelected_4781cc33 .chevronButton_4781cc33:after{content:'';position:absolute;top:0;bottom:0}html[dir='ltr'] .compositeLink_4781cc33.compositeLinkIsSelected_4781cc33 .link_4781cc33:after,html[dir='ltr'] .compositeLink_4781cc33.compositeLinkIsSelected_4781cc33 .chevronButton_4781cc33:after{border-left:2px solid " }, { "theme": "themePrimary", "defaultValue": "#0078d7" }, { "rawString": "}html[dir='rtl'] .compositeLink_4781cc33.compositeLinkIsSelected_4781cc33 .link_4781cc33:after,html[dir='rtl'] .compositeLink_4781cc33.compositeLinkIsSelected_4781cc33 .chevronButton_4781cc33:after{border-right:2px solid " }, { "theme": "themePrimary", "defaultValue": "#0078d7" }, { "rawString": "}[dir='ltr'] .compositeLink_4781cc33.compositeLinkIsSelected_4781cc33 .link_4781cc33:after,[dir='ltr'] .compositeLink_4781cc33.compositeLinkIsSelected_4781cc33 .chevronButton_4781cc33:after{right:0}[dir='rtl'] .compositeLink_4781cc33.compositeLinkIsSelected_4781cc33 .link_4781cc33:after,[dir='rtl'] .compositeLink_4781cc33.compositeLinkIsSelected_4781cc33 .chevronButton_4781cc33:after{left:0}[dir='ltr'] .compositeLink_4781cc33.compositeLinkIsSelected_4781cc33 .link_4781cc33:after,[dir='ltr'] .compositeLink_4781cc33.compositeLinkIsSelected_4781cc33 .chevronButton_4781cc33:after{left:0}[dir='rtl'] .compositeLink_4781cc33.compositeLinkIsSelected_4781cc33 .link_4781cc33:after,[dir='rtl'] .compositeLink_4781cc33.compositeLinkIsSelected_4781cc33 .chevronButton_4781cc33:after{right:0}.link_4781cc33{display:block;position:relative;height:36px;width:100%;line-height:36px;text-decoration:none;cursor:pointer;text-overflow:ellipsis;text-decoration:none;white-space:nowrap;overflow:hidden}.buttonEntry_4781cc33{color:" }, { "theme": "themePrimary", "defaultValue": "#0078d7" }, { "rawString": "}.groupHeaderFontSize_4781cc33{font-size:17px;font-weight:300}.chevronButton_4781cc33::-moz-focus-inner,.chevronButtonGroup_4781cc33::-moz-focus-inner,.chevronButtonLink_4781cc33::-moz-focus-inner,.link_4781cc33::-moz-focus-inner{border:0}.chevronButton_4781cc33,.chevronButtonGroup_4781cc33,.chevronButtonLink_4781cc33,.link_4781cc33{outline:transparent}.chevronButton_4781cc33,.chevronButtonGroup_4781cc33,.chevronButtonLink_4781cc33,.link_4781cc33{position:relative}.ms-Fabric.is-focusVisible .chevronButton_4781cc33:focus:after,.ms-Fabric.is-focusVisible .chevronButtonGroup_4781cc33:focus:after,.ms-Fabric.is-focusVisible .chevronButtonLink_4781cc33:focus:after,.ms-Fabric.is-focusVisible .link_4781cc33:focus:after{content:'';position:absolute;top:0;right:0;bottom:0;left:0;pointer-events:none;border:1px solid " }, { "theme": "focusBorder", "defaultValue": "#000000" }, { "rawString": "}.root_4781cc33 .link_4781cc33 .ms-Button-label{font-size:14px;font-weight:400}\n" }]);
 exports.root = "root_4781cc33";
 exports.rootIsOnTop = "rootIsOnTop_4781cc33";
@@ -13910,30 +14438,30 @@ exports.chevronButtonGroup = "chevronButtonGroup_4781cc33";
 
 
 /***/ }),
-/* 176 */
+/* 181 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(177), exports);
+tslib_1.__exportStar(__webpack_require__(182), exports);
 
 
 /***/ }),
-/* 177 */
+/* 182 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(178), exports);
-tslib_1.__exportStar(__webpack_require__(63), exports);
+tslib_1.__exportStar(__webpack_require__(183), exports);
+tslib_1.__exportStar(__webpack_require__(67), exports);
 
 
 /***/ }),
-/* 178 */
+/* 183 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -13941,17 +14469,17 @@ tslib_1.__exportStar(__webpack_require__(63), exports);
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 /* tslint:disable:no-unused-variable */
-var React = __webpack_require__(2);
+var React = __webpack_require__(1);
 /* tslint:enable:no-unused-variable */
-var Utilities_1 = __webpack_require__(1);
-var index_1 = __webpack_require__(179);
-var Panel_types_1 = __webpack_require__(63);
-var Layer_1 = __webpack_require__(29);
-var Overlay_1 = __webpack_require__(181);
-var Popup_1 = __webpack_require__(56);
-var Button_1 = __webpack_require__(15);
+var Utilities_1 = __webpack_require__(2);
+var index_1 = __webpack_require__(184);
+var Panel_types_1 = __webpack_require__(67);
+var Layer_1 = __webpack_require__(33);
+var Overlay_1 = __webpack_require__(186);
+var Popup_1 = __webpack_require__(60);
+var Button_1 = __webpack_require__(17);
 var Styling_1 = __webpack_require__(3);
-var stylesImport = __webpack_require__(185);
+var stylesImport = __webpack_require__(190);
 var styles = stylesImport;
 var theme = Styling_1.getTheme();
 var Panel = /** @class */ (function (_super) {
@@ -14130,26 +14658,26 @@ exports.Panel = Panel;
 
 
 /***/ }),
-/* 179 */
+/* 184 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(180), exports);
+tslib_1.__exportStar(__webpack_require__(185), exports);
 
 
 /***/ }),
-/* 180 */
+/* 185 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var Utilities_1 = __webpack_require__(1);
+var React = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
 var FocusTrapZone = /** @class */ (function (_super) {
     tslib_1.__extends(FocusTrapZone, _super);
     function FocusTrapZone() {
@@ -14289,38 +14817,38 @@ exports.FocusTrapZone = FocusTrapZone;
 
 
 /***/ }),
-/* 181 */
+/* 186 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(182), exports);
+tslib_1.__exportStar(__webpack_require__(187), exports);
 
 
 /***/ }),
-/* 182 */
+/* 187 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(183), exports);
+tslib_1.__exportStar(__webpack_require__(188), exports);
 
 
 /***/ }),
-/* 183 */
+/* 188 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var Utilities_1 = __webpack_require__(1);
-var stylesImport = __webpack_require__(184);
+var React = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
+var stylesImport = __webpack_require__(189);
 var styles = stylesImport;
 var Overlay = /** @class */ (function (_super) {
     tslib_1.__extends(Overlay, _super);
@@ -14348,14 +14876,14 @@ exports.Overlay = Overlay;
 
 
 /***/ }),
-/* 184 */
+/* 189 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 /* tslint:disable */
-var load_themed_styles_1 = __webpack_require__(5);
+var load_themed_styles_1 = __webpack_require__(7);
 load_themed_styles_1.loadStyles([{ "rawString": ".root_f8052f0e{background-color:" }, { "theme": "whiteTranslucent40", "defaultValue": "rgba(255,255,255,.4)" }, { "rawString": ";position:absolute;bottom:0;left:0;right:0;top:0}.root_f8052f0e.rootIsNone_f8052f0e{visibility:hidden}.root_f8052f0e.rootIsDark_f8052f0e{background-color:" }, { "theme": "blackTranslucent40", "defaultValue": "rgba(0,0,0,.4)" }, { "rawString": "}@media screen and (-ms-high-contrast: active){.root_f8052f0e{border:1px solid WindowText}}\n" }]);
 exports.root = "root_f8052f0e";
 exports.rootIsNone = "rootIsNone_f8052f0e";
@@ -14363,14 +14891,14 @@ exports.rootIsDark = "rootIsDark_f8052f0e";
 
 
 /***/ }),
-/* 185 */
+/* 190 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 /* tslint:disable */
-var load_themed_styles_1 = __webpack_require__(5);
+var load_themed_styles_1 = __webpack_require__(7);
 load_themed_styles_1.loadStyles([{ "rawString": ".hiddenPanel_cb20db42{visibility:hidden}.root_cb20db42{pointer-events:none;position:absolute;top:0;left:0;right:0;bottom:0}.root_cb20db42 .overlay_cb20db42{pointer-events:none;opacity:1;cursor:pointer;-webkit-transition:opacity .367s cubic-bezier(0.1, 0.9, 0.2, 1);transition:opacity .367s cubic-bezier(0.1, 0.9, 0.2, 1)}.main_cb20db42{background-color:" }, { "theme": "white", "defaultValue": "#ffffff" }, { "rawString": ";position:absolute;width:100%;bottom:0;top:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch}[dir='ltr'] .main_cb20db42{right:0}[dir='rtl'] .main_cb20db42{left:0}@media (min-width: 480px){.main_cb20db42{border-left:1px solid " }, { "theme": "neutralLight", "defaultValue": "#eaeaea" }, { "rawString": ";border-right:1px solid " }, { "theme": "neutralLight", "defaultValue": "#eaeaea" }, { "rawString": ";pointer-events:auto;width:340px}[dir='ltr'] .main_cb20db42{-webkit-box-shadow:-30px 0px 30px -30px rgba(0,0,0,0.2);box-shadow:-30px 0px 30px -30px rgba(0,0,0,0.2)}[dir='rtl'] .main_cb20db42{-webkit-box-shadow:30px 0px 30px -30px rgba(0,0,0,0.2);box-shadow:30px 0px 30px -30px rgba(0,0,0,0.2)}[dir='ltr'] .main_cb20db42{left:auto}[dir='rtl'] .main_cb20db42{right:auto}}.root_cb20db42.rootIsSmall_cb20db42 .main_cb20db42{width:272px}@media (min-width: 480px){.root_cb20db42.rootIsSmall_cb20db42 .main_cb20db42{width:340px}}.root_cb20db42.rootIsSmallLeft_cb20db42 .main_cb20db42{width:272px}[dir='ltr'] .root_cb20db42.rootIsSmallLeft_cb20db42 .main_cb20db42{right:auto}[dir='rtl'] .root_cb20db42.rootIsSmallLeft_cb20db42 .main_cb20db42{left:auto}[dir='ltr'] .root_cb20db42.rootIsSmallLeft_cb20db42 .main_cb20db42{left:0}[dir='rtl'] .root_cb20db42.rootIsSmallLeft_cb20db42 .main_cb20db42{right:0}[dir='ltr'] .root_cb20db42.rootIsSmallLeft_cb20db42 .main_cb20db42{-webkit-box-shadow:30px 0px 30px -30px rgba(0,0,0,0.2);box-shadow:30px 0px 30px -30px rgba(0,0,0,0.2)}[dir='rtl'] .root_cb20db42.rootIsSmallLeft_cb20db42 .main_cb20db42{-webkit-box-shadow:-30px 0px 30px -30px rgba(0,0,0,0.2);box-shadow:-30px 0px 30px -30px rgba(0,0,0,0.2)}.root_cb20db42.rootIsSmallFluid_cb20db42 .main_cb20db42{width:100%}@media (min-width: 768px){.root_cb20db42.rootIsMedium_cb20db42 .main_cb20db42,.root_cb20db42.rootIsLarge_cb20db42 .main_cb20db42,.root_cb20db42.rootIsXLarge_cb20db42 .main_cb20db42,.root_cb20db42.rootIsCustom_cb20db42 .main_cb20db42{width:auto}[dir='ltr'] .root_cb20db42.rootIsMedium_cb20db42 .main_cb20db42,[dir='ltr'] .root_cb20db42.rootIsLarge_cb20db42 .main_cb20db42,[dir='ltr'] .root_cb20db42.rootIsXLarge_cb20db42 .main_cb20db42,[dir='ltr'] .root_cb20db42.rootIsCustom_cb20db42 .main_cb20db42{left:48px}[dir='rtl'] .root_cb20db42.rootIsMedium_cb20db42 .main_cb20db42,[dir='rtl'] .root_cb20db42.rootIsLarge_cb20db42 .main_cb20db42,[dir='rtl'] .root_cb20db42.rootIsXLarge_cb20db42 .main_cb20db42,[dir='rtl'] .root_cb20db42.rootIsCustom_cb20db42 .main_cb20db42{right:48px}}@media (min-width: 1024px){.root_cb20db42.rootIsMedium_cb20db42 .main_cb20db42{width:643px}[dir='ltr'] .root_cb20db42.rootIsMedium_cb20db42 .main_cb20db42{left:auto}[dir='rtl'] .root_cb20db42.rootIsMedium_cb20db42 .main_cb20db42{right:auto}}@media (min-width: 1366px){[dir='ltr'] .root_cb20db42.rootIsLarge_cb20db42 .main_cb20db42{left:428px}[dir='rtl'] .root_cb20db42.rootIsLarge_cb20db42 .main_cb20db42{right:428px}}@media (min-width: 1366px){.root_cb20db42.rootIsLarge_cb20db42.rootIsFixed_cb20db42 .main_cb20db42{width:940px}[dir='ltr'] .root_cb20db42.rootIsLarge_cb20db42.rootIsFixed_cb20db42 .main_cb20db42{left:auto}[dir='rtl'] .root_cb20db42.rootIsLarge_cb20db42.rootIsFixed_cb20db42 .main_cb20db42{right:auto}}@media (min-width: 1366px){[dir='ltr'] .root_cb20db42.rootIsXLarge_cb20db42 .main_cb20db42{left:176px}[dir='rtl'] .root_cb20db42.rootIsXLarge_cb20db42 .main_cb20db42{right:176px}}@media (min-width: 1024px){[dir='ltr'] .root_cb20db42.rootIsCustom_cb20db42 .main_cb20db42{left:auto}[dir='rtl'] .root_cb20db42.rootIsCustom_cb20db42 .main_cb20db42{right:auto}}.root_cb20db42.rootIsOpen_cb20db42 .main_cb20db42{pointer-events:auto}.root_cb20db42.rootIsOpen_cb20db42 .overlay_cb20db42{cursor:pointer;pointer-events:auto}@media screen and (-ms-high-contrast: active){.root_cb20db42.rootIsOpen_cb20db42 .overlay_cb20db42{opacity:0}}.navigation_cb20db42{padding:0 5px;height:44px;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end}.contentInner_cb20db42{position:absolute;top:0;bottom:0;left:0;right:0;overflow-y:hidden;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;-webkit-overflow-scrolling:touch;-webkit-transform:translateZ(0);transform:translateZ(0)}.rootHasCloseButton_cb20db42 .contentInner_cb20db42{top:44px}.header_cb20db42,.content_cb20db42,.footerInner_cb20db42{padding-left:16px;padding-right:16px}@media (min-width: 768px){.header_cb20db42,.content_cb20db42,.footerInner_cb20db42{padding-left:32px;padding-right:32px}}@media (min-width: 1366px){.header_cb20db42,.content_cb20db42,.footerInner_cb20db42{padding-left:40px;padding-right:40px}}.header_cb20db42{margin:14px 0;-webkit-box-flex:0;-ms-flex-positive:0;flex-grow:0}@media (min-width: 1024px){.header_cb20db42{margin-top:30px}}.content_cb20db42{margin-bottom:0;padding-bottom:20px;overflow-y:auto}.contentGrow_cb20db42{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1}.footer_cb20db42{-webkit-box-flex:0;-ms-flex-positive:0;flex-grow:0;border-top:1px solid transparent;-webkit-transition:border .367s cubic-bezier(0.1, 0.25, 0.75, 0.9);transition:border .367s cubic-bezier(0.1, 0.25, 0.75, 0.9)}.footerInner_cb20db42{padding-bottom:20px;padding-top:20px}.footerIsSticky_cb20db42{background:" }, { "theme": "white", "defaultValue": "#ffffff" }, { "rawString": ";border-top-color:" }, { "theme": "neutralLight", "defaultValue": "#eaeaea" }, { "rawString": "}.headerText_cb20db42{font-size:21px;font-weight:100;color:" }, { "theme": "neutralPrimary", "defaultValue": "#333333" }, { "rawString": ";line-height:32px;margin:0}\n" }]);
 exports.hiddenPanel = "hiddenPanel_cb20db42";
 exports.root = "root_cb20db42";
@@ -14398,13 +14926,13 @@ exports.headerText = "headerText_cb20db42";
 
 
 /***/ }),
-/* 186 */
+/* 191 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(187);
+var content = __webpack_require__(192);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -14412,7 +14940,7 @@ var transform;
 var options = {"hmr":true}
 options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(8)(content, options);
+var update = __webpack_require__(6)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -14429,10 +14957,10 @@ if(false) {
 }
 
 /***/ }),
-/* 187 */
+/* 192 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(7)(undefined);
+exports = module.exports = __webpack_require__(5)(undefined);
 // imports
 
 
@@ -14443,7 +14971,7 @@ exports.push([module.i, ".MovieDB {\n  width: 100%;\n  height: 100%;\n  overflow
 
 
 /***/ }),
-/* 188 */
+/* 193 */
 /***/ (function(module, exports) {
 
 
@@ -14538,17 +15066,17 @@ module.exports = function (css) {
 
 
 /***/ }),
-/* 189 */
+/* 194 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var HomePage_1 = __webpack_require__(190);
-var FavoritesPage_1 = __webpack_require__(197);
-var MoviePage_1 = __webpack_require__(200);
-var SearchHistoryPage_1 = __webpack_require__(212);
-var SearchResultsPage_1 = __webpack_require__(213);
+var HomePage_1 = __webpack_require__(195);
+var FavoritesPage_1 = __webpack_require__(202);
+var MoviePage_1 = __webpack_require__(208);
+var SearchHistoryPage_1 = __webpack_require__(220);
+var SearchResultsPage_1 = __webpack_require__(251);
 var PageConfiguration = /** @class */ (function () {
     function PageConfiguration(pageName, page) {
         this.name = pageName;
@@ -14575,7 +15103,7 @@ exports.PageConfiguration = PageConfiguration;
 
 
 /***/ }),
-/* 190 */
+/* 195 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -14591,8 +15119,8 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var React = __webpack_require__(2);
-var MovieCard_1 = __webpack_require__(31);
+var React = __webpack_require__(1);
+var MovieCard_1 = __webpack_require__(35);
 var HomePage = /** @class */ (function (_super) {
     __extends(HomePage, _super);
     function HomePage() {
@@ -14614,39 +15142,39 @@ exports.HomePage = HomePage;
 
 
 /***/ }),
-/* 191 */
+/* 196 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(44), exports);
-tslib_1.__exportStar(__webpack_require__(45), exports);
+tslib_1.__exportStar(__webpack_require__(48), exports);
+tslib_1.__exportStar(__webpack_require__(49), exports);
 
 
 /***/ }),
-/* 192 */
+/* 197 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(193), exports);
+tslib_1.__exportStar(__webpack_require__(198), exports);
 
 
 /***/ }),
-/* 193 */
+/* 198 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var Utilities_1 = __webpack_require__(1);
-var Label_classNames_1 = __webpack_require__(194);
+var React = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
+var Label_classNames_1 = __webpack_require__(199);
 var Label = /** @class */ (function (_super) {
     tslib_1.__extends(Label, _super);
     function Label() {
@@ -14665,13 +15193,13 @@ exports.Label = Label;
 
 
 /***/ }),
-/* 194 */
+/* 199 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Utilities_1 = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
 var Styling_1 = __webpack_require__(3);
 exports.getLabelClassNames = Utilities_1.memoizeFunction(function (theme, className, disabled, required) {
     return Styling_1.mergeStyleSets({
@@ -14710,13 +15238,13 @@ exports.getLabelClassNames = Utilities_1.memoizeFunction(function (theme, classN
 
 
 /***/ }),
-/* 195 */
+/* 200 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(196);
+var content = __webpack_require__(201);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -14724,7 +15252,7 @@ var transform;
 var options = {"hmr":true}
 options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(8)(content, options);
+var update = __webpack_require__(6)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -14741,10 +15269,10 @@ if(false) {
 }
 
 /***/ }),
-/* 196 */
+/* 201 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(7)(undefined);
+exports = module.exports = __webpack_require__(5)(undefined);
 // imports
 
 
@@ -14755,7 +15283,7 @@ exports.push([module.i, ".MovieCard {\n  display: inline-flex;\n  background: ca
 
 
 /***/ }),
-/* 197 */
+/* 202 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -14771,10 +15299,10 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var React = __webpack_require__(2);
-var MovieCard_1 = __webpack_require__(31);
-__webpack_require__(198);
-//FavoritesPage.less
+var React = __webpack_require__(1);
+var MovieCard_1 = __webpack_require__(35);
+__webpack_require__(203);
+var RevertRemovalButton_1 = __webpack_require__(205);
 var FavoritesPage = /** @class */ (function (_super) {
     __extends(FavoritesPage, _super);
     function FavoritesPage() {
@@ -14784,15 +15312,16 @@ var FavoritesPage = /** @class */ (function (_super) {
         //TODO
         //Dummy Result
         var cards = [];
-        for (var i = 0; i < 50; i++) {
+        for (var i = 0; i < 10; i++) {
             cards.push(React.createElement(MovieCard_1.MovieCard, { key: 'MovieCard-' + i }));
         }
         return cards;
     };
     FavoritesPage.prototype.render = function () {
         return React.createElement("div", { className: "FavoritesPage" },
-            React.createElement("div", { className: "TopContainer" }, this.getFavorits()),
-            React.createElement("div", { className: "BottomContainer" }));
+            React.createElement("div", { className: "FavoritesPage-TopContainer" }, this.getFavorits()),
+            React.createElement("div", { className: "FavoritesPage-BottomContainer" },
+                React.createElement(RevertRemovalButton_1.RevertRemovalButton, { isEnabled: true })));
     };
     return FavoritesPage;
 }(React.Component));
@@ -14800,13 +15329,13 @@ exports.FavoritesPage = FavoritesPage;
 
 
 /***/ }),
-/* 198 */
+/* 203 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(199);
+var content = __webpack_require__(204);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -14814,7 +15343,7 @@ var transform;
 var options = {"hmr":true}
 options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(8)(content, options);
+var update = __webpack_require__(6)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -14831,10 +15360,10 @@ if(false) {
 }
 
 /***/ }),
-/* 199 */
+/* 204 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(7)(undefined);
+exports = module.exports = __webpack_require__(5)(undefined);
 // imports
 
 
@@ -14845,7 +15374,7 @@ exports.push([module.i, ".FavoritesPage {\n  display: flex;\n  flex-direction: c
 
 
 /***/ }),
-/* 200 */
+/* 205 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -14861,12 +15390,93 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var React = __webpack_require__(2);
-var MovieCoverAndDescription_1 = __webpack_require__(201);
-var FavoriteButton_1 = __webpack_require__(204);
-var FavoriteIconSizeEnum_1 = __webpack_require__(65);
-var MovieInfo_1 = __webpack_require__(207);
-__webpack_require__(210);
+var React = __webpack_require__(1);
+var Icon_1 = __webpack_require__(8);
+var Label_1 = __webpack_require__(10);
+__webpack_require__(206);
+var RevertRemovalButton = /** @class */ (function (_super) {
+    __extends(RevertRemovalButton, _super);
+    function RevertRemovalButton() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    RevertRemovalButton.prototype.render = function () {
+        return React.createElement("button", { className: "RevertRemovalButton" },
+            React.createElement(Icon_1.Icon, { className: "RevertRemovalButton-Icon", iconName: "RevToggleKey" }),
+            React.createElement(Label_1.Label, { className: "RevertRemovalButton-Label" }));
+    };
+    return RevertRemovalButton;
+}(React.Component));
+exports.RevertRemovalButton = RevertRemovalButton;
+
+
+/***/ }),
+/* 206 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(207);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {"hmr":true}
+options.transform = transform
+// add the styles to the DOM
+var update = __webpack_require__(6)(content, options);
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/cjs.js!./RevertRemovalButton.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/cjs.js!./RevertRemovalButton.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 207 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(5)(undefined);
+// imports
+
+
+// module
+exports.push([module.i, ".RevertRemovalButton {\n  display: flex;\n  flex-direction: row;\n  justify-content: space-around;\n  align-items: center;\n}\n.RevertRemovalButton-Icon {\n  flex: none;\n  font-size: 30px;\n  font-weight: bold;\n  margin: 5px;\n}\n.RevertRemovalButton-Label {\n  flex: none;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 208 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var React = __webpack_require__(1);
+var MovieCoverAndDescription_1 = __webpack_require__(209);
+var FavoriteButton_1 = __webpack_require__(212);
+var FavoriteIconSizeEnum_1 = __webpack_require__(69);
+var MovieInfo_1 = __webpack_require__(215);
+__webpack_require__(218);
 var MoviePage = /** @class */ (function (_super) {
     __extends(MoviePage, _super);
     function MoviePage() {
@@ -14886,7 +15496,7 @@ exports.MoviePage = MoviePage;
 
 
 /***/ }),
-/* 201 */
+/* 209 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -14910,9 +15520,9 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
     return t;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var React = __webpack_require__(2);
-var Image_1 = __webpack_require__(64);
-__webpack_require__(202);
+var React = __webpack_require__(1);
+var Image_1 = __webpack_require__(68);
+__webpack_require__(210);
 var MovieCardAndDescription = /** @class */ (function (_super) {
     __extends(MovieCardAndDescription, _super);
     function MovieCardAndDescription() {
@@ -14938,13 +15548,13 @@ exports.MovieCardAndDescription = MovieCardAndDescription;
 
 
 /***/ }),
-/* 202 */
+/* 210 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(203);
+var content = __webpack_require__(211);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -14952,7 +15562,7 @@ var transform;
 var options = {"hmr":true}
 options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(8)(content, options);
+var update = __webpack_require__(6)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -14969,10 +15579,10 @@ if(false) {
 }
 
 /***/ }),
-/* 203 */
+/* 211 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(7)(undefined);
+exports = module.exports = __webpack_require__(5)(undefined);
 // imports
 
 
@@ -14983,7 +15593,7 @@ exports.push([module.i, ".MovieCardAndDescription {\n  width: auto;\n  height: a
 
 
 /***/ }),
-/* 204 */
+/* 212 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15005,12 +15615,12 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var React = __webpack_require__(2);
-var FavoriteIconSizeEnum_1 = __webpack_require__(65);
-var Utilities_1 = __webpack_require__(1);
-var Icon_1 = __webpack_require__(14);
-__webpack_require__(205);
-var Label_1 = __webpack_require__(32);
+var React = __webpack_require__(1);
+var FavoriteIconSizeEnum_1 = __webpack_require__(69);
+var Utilities_1 = __webpack_require__(2);
+var Icon_1 = __webpack_require__(8);
+__webpack_require__(213);
+var Label_1 = __webpack_require__(10);
 var FavoriteButton = /** @class */ (function (_super) {
     __extends(FavoriteButton, _super);
     function FavoriteButton(props, context) {
@@ -15059,13 +15669,13 @@ exports.FavoriteButton = FavoriteButton;
 
 
 /***/ }),
-/* 205 */
+/* 213 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(206);
+var content = __webpack_require__(214);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -15073,7 +15683,7 @@ var transform;
 var options = {"hmr":true}
 options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(8)(content, options);
+var update = __webpack_require__(6)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -15090,10 +15700,10 @@ if(false) {
 }
 
 /***/ }),
-/* 206 */
+/* 214 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(7)(undefined);
+exports = module.exports = __webpack_require__(5)(undefined);
 // imports
 
 
@@ -15104,7 +15714,7 @@ exports.push([module.i, ".FavoriteButton {\n  width: auto;\n  height: auto;\n  d
 
 
 /***/ }),
-/* 207 */
+/* 215 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15120,9 +15730,9 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var React = __webpack_require__(2);
-var Label_1 = __webpack_require__(32);
-__webpack_require__(208);
+var React = __webpack_require__(1);
+var Label_1 = __webpack_require__(10);
+__webpack_require__(216);
 //Info: Generes (Array 1...*), Title (1), Duration (0...1), Release Date (0...1)
 var MovieInfo = /** @class */ (function (_super) {
     __extends(MovieInfo, _super);
@@ -15148,13 +15758,13 @@ exports.MovieInfo = MovieInfo;
 
 
 /***/ }),
-/* 208 */
+/* 216 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(209);
+var content = __webpack_require__(217);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -15162,7 +15772,7 @@ var transform;
 var options = {"hmr":true}
 options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(8)(content, options);
+var update = __webpack_require__(6)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -15179,10 +15789,10 @@ if(false) {
 }
 
 /***/ }),
-/* 209 */
+/* 217 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(7)(undefined);
+exports = module.exports = __webpack_require__(5)(undefined);
 // imports
 
 
@@ -15193,13 +15803,13 @@ exports.push([module.i, ".MovieInfo {\n  display: flex;\n  flex-direction: colum
 
 
 /***/ }),
-/* 210 */
+/* 218 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(211);
+var content = __webpack_require__(219);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -15207,7 +15817,7 @@ var transform;
 var options = {"hmr":true}
 options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(8)(content, options);
+var update = __webpack_require__(6)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -15224,10 +15834,10 @@ if(false) {
 }
 
 /***/ }),
-/* 211 */
+/* 219 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(7)(undefined);
+exports = module.exports = __webpack_require__(5)(undefined);
 // imports
 
 
@@ -15238,7 +15848,7 @@ exports.push([module.i, ".MoviePage {\n  display: flex;\n  flex-direction: row;\
 
 
 /***/ }),
-/* 212 */
+/* 220 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15254,14 +15864,26 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var React = __webpack_require__(2);
+var React = __webpack_require__(1);
+var HistoryList_1 = __webpack_require__(221);
+var DateFilter_1 = __webpack_require__(227);
+var LimitFilter_1 = __webpack_require__(243);
+var GoToSearchButton_1 = __webpack_require__(246);
+__webpack_require__(249);
 var SearchHistoryPage = /** @class */ (function (_super) {
     __extends(SearchHistoryPage, _super);
     function SearchHistoryPage() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
     SearchHistoryPage.prototype.render = function () {
-        return React.createElement("div", { className: "SearchHistoryPage" }, "This is the Search history page :D yey");
+        return React.createElement("div", { className: "SearchHistoryPage" },
+            React.createElement("div", { className: "SearchHistoryPage-RightContainer" },
+                React.createElement(HistoryList_1.HistoryList, { listContent: ["search string 1", "search string 2", "search string 3", "search string 4",
+                        "search string 5", "search string 6", "search string 7", "search string 8", "search string 9",] })),
+            React.createElement("div", { className: "SearchHistoryPage-LeftContainer" },
+                React.createElement(DateFilter_1.DateFilter, null),
+                React.createElement(LimitFilter_1.LimitFilter, null),
+                React.createElement(GoToSearchButton_1.GoToSearchButton, null)));
     };
     return SearchHistoryPage;
 }(React.Component));
@@ -15269,7 +15891,7 @@ exports.SearchHistoryPage = SearchHistoryPage;
 
 
 /***/ }),
-/* 213 */
+/* 221 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15285,8 +15907,2653 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var React = __webpack_require__(2);
-var MovieCard_1 = __webpack_require__(31);
+var React = __webpack_require__(1);
+var List_1 = __webpack_require__(222);
+__webpack_require__(225);
+var HistoryList = /** @class */ (function (_super) {
+    __extends(HistoryList, _super);
+    function HistoryList() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    HistoryList.prototype.render = function () {
+        return React.createElement(List_1.List, { className: "HistoryList", items: this.props.listContent });
+    };
+    return HistoryList;
+}(React.Component));
+exports.HistoryList = HistoryList;
+
+
+/***/ }),
+/* 222 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+tslib_1.__exportStar(__webpack_require__(223), exports);
+
+
+/***/ }),
+/* 223 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+tslib_1.__exportStar(__webpack_require__(224), exports);
+
+
+/***/ }),
+/* 224 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+var React = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
+var RESIZE_DELAY = 16;
+var MIN_SCROLL_UPDATE_DELAY = 100;
+var MAX_SCROLL_UPDATE_DELAY = 500;
+var IDLE_DEBOUNCE_DELAY = 200;
+// The amount of time to wait before declaring that the list isn't scrolling
+var DONE_SCROLLING_WAIT = 500;
+var DEFAULT_ITEMS_PER_PAGE = 10;
+var DEFAULT_PAGE_HEIGHT = 30;
+var DEFAULT_RENDERED_WINDOWS_BEHIND = 2;
+var DEFAULT_RENDERED_WINDOWS_AHEAD = 2;
+var EMPTY_RECT = {
+    top: -1,
+    bottom: -1,
+    left: -1,
+    right: -1,
+    width: 0,
+    height: 0
+};
+// Naming expensive measures so that they're named in profiles.
+var _measurePageRect = function (element) { return element.getBoundingClientRect(); };
+var _measureSurfaceRect = _measurePageRect;
+var _measureScrollRect = _measurePageRect;
+/**
+ * The List renders virtualized pages of items. Each page's item count is determined by the getItemCountForPage callback if
+ * provided by the caller, or 10 as default. Each page's height is determined by the getPageHeight callback if provided by
+ * the caller, or by cached measurements if available, or by a running average, or a default fallback.
+ *
+ * The algorithm for rendering pages works like this:
+ *
+ * 1. Predict visible pages based on "current measure data" (page heights, surface position, visible window)
+ * 2. If changes are necessary, apply changes (add/remove pages)
+ * 3. For pages that are added, measure the page heights if we need to using getBoundingClientRect
+ * 4. If measurements don't match predictions, update measure data and goto step 1 asynchronously
+ *
+ * Measuring too frequently can pull performance down significantly. To compensate, we cache measured values so that
+ * we can avoid re-measuring during operations that should not alter heights, like scrolling.
+ *
+ * To optimize glass rendering performance, onShouldVirtualize can be set. When onShouldVirtualize return false,
+ * List will run in fast mode (not virtualized) to render all items without any measurements to improve page load time. And we
+ * start doing measurements and rendering in virtualized mode when items grows larger than this threshold.
+ *
+ * However, certain operations can make measure data stale. For example, resizing the list, or passing in new props,
+ * or forcing an update change cause pages to shrink/grow. When these operations occur, we increment a measureVersion
+ * number, which we associate with cached measurements and use to determine if a remeasure should occur.
+ */
+var List = /** @class */ (function (_super) {
+    tslib_1.__extends(List, _super);
+    function List(props) {
+        var _this = _super.call(this, props) || this;
+        _this.state = {
+            pages: [],
+            isScrolling: false
+        };
+        _this._estimatedPageHeight = 0;
+        _this._totalEstimates = 0;
+        _this._requiredWindowsAhead = 0;
+        _this._requiredWindowsBehind = 0;
+        // Track the measure version for everything.
+        _this._measureVersion = 0;
+        // Ensure that scrolls are lazy updated.
+        _this._onAsyncScroll = _this._async.debounce(_this._onAsyncScroll, MIN_SCROLL_UPDATE_DELAY, {
+            leading: false,
+            maxWait: MAX_SCROLL_UPDATE_DELAY
+        });
+        _this._onAsyncIdle = _this._async.debounce(_this._onAsyncIdle, IDLE_DEBOUNCE_DELAY, {
+            leading: false
+        });
+        _this._onAsyncResize = _this._async.debounce(_this._onAsyncResize, RESIZE_DELAY, {
+            leading: false
+        });
+        _this._onScrollingDone = _this._async.debounce(_this._onScrollingDone, DONE_SCROLLING_WAIT, {
+            leading: false
+        });
+        _this._cachedPageHeights = {};
+        _this._estimatedPageHeight = 0;
+        _this._focusedIndex = -1;
+        _this._scrollingToIndex = -1;
+        _this._pageCache = {};
+        return _this;
+    }
+    /**
+     * Scroll to the given index. By default will bring the page the specified item is on into the view. If a callback
+     * to measure the height of an individual item is specified, will only scroll to bring the specific item into view.
+     *
+     * Note: with items of variable height and no passed in `getPageHeight` method, the list might jump after scrolling
+     * when windows before/ahead are being rendered, and the estimated height is replaced using actual elements.
+     *
+     * @param index Index of item to scroll to
+     * @param measureItem Optional callback to measure the height of an individual item
+     */
+    List.prototype.scrollToIndex = function (index, measureItem) {
+        var startIndex = this.props.startIndex;
+        var renderCount = this._getRenderCount();
+        var endIndex = startIndex + renderCount;
+        var allowedRect = this._allowedRect;
+        var scrollTop = 0;
+        var itemsPerPage = 1;
+        for (var itemIndex = startIndex; itemIndex < endIndex; itemIndex += itemsPerPage) {
+            var pageSpecification = this._getPageSpecification(itemIndex, allowedRect);
+            var pageHeight = pageSpecification.height;
+            itemsPerPage = pageSpecification.itemCount;
+            var requestedIndexIsInPage = itemIndex <= index && (itemIndex + itemsPerPage) > index;
+            if (requestedIndexIsInPage) {
+                // We have found the page. If the user provided a way to measure an individual item, we will try to scroll in just
+                // the given item, otherwise we'll only bring the page into view
+                if (measureItem) {
+                    // Adjust for actual item position within page
+                    var itemPositionWithinPage = index - itemIndex;
+                    for (var itemIndexInPage = 0; itemIndexInPage < itemPositionWithinPage; ++itemIndexInPage) {
+                        scrollTop += measureItem(itemIndex + itemIndexInPage);
+                    }
+                    var scrollBottom = scrollTop + measureItem(index);
+                    var scrollRect = _measureScrollRect(this._scrollElement);
+                    var scrollWindow = {
+                        top: this._scrollElement.scrollTop,
+                        bottom: this._scrollElement.scrollTop + scrollRect.height
+                    };
+                    var itemIsFullyVisible = scrollTop >= scrollWindow.top && scrollBottom <= scrollWindow.bottom;
+                    if (itemIsFullyVisible) {
+                        // Item is already visible, do nothing.
+                        return;
+                    }
+                    var itemIsPartiallyAbove = scrollTop < scrollWindow.top;
+                    var itemIsPartiallyBelow = scrollBottom > scrollWindow.bottom;
+                    if (itemIsPartiallyAbove) {
+                        // We will just scroll to 'scrollTop'
+                        //  ______
+                        // |Item  |   - scrollTop
+                        // |  ____|_
+                        // |_|____| | - scrollWindow.top
+                        //   |      |
+                        //   |______|
+                    }
+                    else if (itemIsPartiallyBelow) {
+                        // Adjust scrollTop position to just bring in the element
+                        //  ______   - scrollTop
+                        // |      |
+                        // |  ____|_  - scrollWindow.bottom
+                        // |_|____| |
+                        //   | Item |
+                        //   |______| - scrollBottom
+                        scrollTop = this._scrollElement.scrollTop + (scrollBottom - scrollWindow.bottom);
+                    }
+                }
+                this._scrollElement.scrollTop = scrollTop;
+                break;
+            }
+            scrollTop += pageHeight;
+        }
+    };
+    List.prototype.componentDidMount = function () {
+        this._updatePages();
+        this._measureVersion++;
+        this._scrollElement = Utilities_1.findScrollableParent(this.refs.root);
+        this._events.on(window, 'resize', this._onAsyncResize);
+        this._events.on(this.refs.root, 'focus', this._onFocus, true);
+        if (this._scrollElement) {
+            this._events.on(this._scrollElement, 'scroll', this._onScroll);
+            this._events.on(this._scrollElement, 'scroll', this._onAsyncScroll);
+        }
+    };
+    List.prototype.componentWillReceiveProps = function (newProps) {
+        if (newProps.items !== this.props.items ||
+            newProps.renderCount !== this.props.renderCount ||
+            newProps.startIndex !== this.props.startIndex) {
+            // We have received new items so we want to make sure that initially we only render a single window to
+            // fill the currently visible rect, and then later render additional windows.
+            this._resetRequiredWindows();
+            this._requiredRect = null;
+            this._measureVersion++;
+            this._invalidatePageCache();
+            this._updatePages(newProps);
+        }
+    };
+    List.prototype.shouldComponentUpdate = function (newProps, newState) {
+        var oldPages = this.state.pages;
+        var newPages = newState.pages;
+        var shouldComponentUpdate = false;
+        // Update if the page stops scrolling
+        if (!newState.isScrolling && this.state.isScrolling) {
+            return true;
+        }
+        if (newProps.items === this.props.items &&
+            oldPages.length === newPages.length) {
+            for (var i = 0; i < oldPages.length; i++) {
+                var oldPage = oldPages[i];
+                var newPage = newPages[i];
+                if ((oldPage.key !== newPage.key ||
+                    oldPage.itemCount !== newPage.itemCount)) {
+                    shouldComponentUpdate = true;
+                    break;
+                }
+            }
+        }
+        else {
+            shouldComponentUpdate = true;
+        }
+        return shouldComponentUpdate;
+    };
+    List.prototype.forceUpdate = function () {
+        this._invalidatePageCache();
+        // Ensure that when the list is force updated we update the pages first before render.
+        this._updateRenderRects(this.props, true);
+        this._updatePages();
+        this._measureVersion++;
+        _super.prototype.forceUpdate.call(this);
+    };
+    List.prototype.render = function () {
+        var _a = this.props, className = _a.className, role = _a.role;
+        var _b = this.state.pages, pages = _b === void 0 ? [] : _b;
+        var pageElements = [];
+        var divProps = Utilities_1.getNativeProps(this.props, Utilities_1.divProperties);
+        for (var _i = 0, pages_1 = pages; _i < pages_1.length; _i++) {
+            var page = pages_1[_i];
+            pageElements.push(this._renderPage(page));
+        }
+        // console.log(`Page elements ${pageElements.length}`);
+        return (React.createElement("div", tslib_1.__assign({ ref: 'root' }, divProps, { role: (role === undefined) ? 'list' : role, className: Utilities_1.css('ms-List', className) }),
+            React.createElement("div", { ref: 'surface', className: Utilities_1.css('ms-List-surface'), role: 'presentation' }, pageElements)));
+    };
+    List.prototype._shouldVirtualize = function (props) {
+        if (props === void 0) { props = this.props; }
+        var onShouldVirtualize = props.onShouldVirtualize;
+        return !onShouldVirtualize || onShouldVirtualize(props);
+    };
+    /**
+     * when props.items change or forceUpdate called, throw away cached pages
+     */
+    List.prototype._invalidatePageCache = function () {
+        this._pageCache = {};
+    };
+    List.prototype._renderPage = function (page) {
+        var usePageCache = this.props.usePageCache;
+        var cachedPage;
+        // if usePageCache is set and cached page element can be found, just return cached page
+        if (usePageCache) {
+            cachedPage = this._pageCache[page.key];
+            if (cachedPage && cachedPage.pageElement) {
+                return cachedPage.pageElement;
+            }
+        }
+        var pageStyle = this._getPageStyle(page);
+        var _a = this.props.onRenderPage, onRenderPage = _a === void 0 ? this._onRenderPage : _a;
+        var pageElement = onRenderPage({
+            page: page,
+            className: Utilities_1.css('ms-List-page'),
+            key: page.key,
+            ref: page.key,
+            style: pageStyle,
+            role: 'presentation'
+        }, this._onRenderPage);
+        // cache the first page for now since it is re-rendered a lot times unncessarily.
+        // todo: a more aggresive caching mechanism is to cache pages constaining the items not changed.
+        // now we re-render pages too frequently, for example, props.items increased from 30 to 60, although the
+        // first 30 items did not change, we still re-rendered all of them in this props.items change.
+        if (usePageCache && page.startIndex === 0) {
+            this._pageCache[page.key] = {
+                page: page,
+                pageElement: pageElement
+            };
+        }
+        return pageElement;
+    };
+    /** Generate the style object for the page. */
+    List.prototype._getPageStyle = function (page) {
+        var getPageStyle = this.props.getPageStyle;
+        return tslib_1.__assign({}, (getPageStyle ? getPageStyle(page) : {}), (!page.items ? {
+            height: page.height
+        } : {}));
+    };
+    List.prototype._onRenderPage = function (pageProps, defaultRender) {
+        var _this = this;
+        var _a = this.props, onRenderCell = _a.onRenderCell, role = _a.role;
+        var _b = pageProps.page, items = _b.items, startIndex = _b.startIndex, divProps = tslib_1.__rest(pageProps, ["page"]);
+        // only assign list item role if no role is assigned
+        var cellRole = (role === undefined) ? 'listitem' : 'presentation';
+        var cells = (items || []).map(function (item, offset) {
+            var index = startIndex + offset;
+            var itemKey = _this.props.getKey ?
+                _this.props.getKey(item, index) :
+                item && item.key;
+            if (itemKey === null || itemKey === undefined) {
+                itemKey = index;
+            }
+            return (React.createElement("div", { role: cellRole, className: Utilities_1.css('ms-List-cell'), key: itemKey, "data-list-index": index, "data-automationid": 'ListCell' }, onRenderCell && onRenderCell(item, index, _this.state.isScrolling)));
+        });
+        return (React.createElement("div", tslib_1.__assign({}, divProps), cells));
+    };
+    /** Track the last item index focused so that we ensure we keep it rendered. */
+    List.prototype._onFocus = function (ev) {
+        var target = ev.target;
+        while (target !== this.refs.surface) {
+            var indexString = target.getAttribute('data-list-index');
+            if (indexString) {
+                this._focusedIndex = Number(indexString);
+                break;
+            }
+            target = Utilities_1.getParent(target);
+        }
+    };
+    /**
+     * Called synchronously to reset the required render range to 0 on scrolling. After async scroll has executed,
+     * we will call onAsyncIdle which will reset it back to it's correct value.
+     */
+    List.prototype._onScroll = function () {
+        if (!this.state.isScrolling) {
+            this.setState({ isScrolling: true });
+        }
+        this._resetRequiredWindows();
+        this._onScrollingDone();
+    };
+    List.prototype._resetRequiredWindows = function () {
+        this._requiredWindowsAhead = 0;
+        this._requiredWindowsBehind = 0;
+    };
+    /**
+     * Debounced method to asynchronously update the visible region on a scroll event.
+     */
+    List.prototype._onAsyncScroll = function () {
+        this._updateRenderRects();
+        // Only update pages when the visible rect falls outside of the materialized rect.
+        if (!this._materializedRect || !_isContainedWithin(this._requiredRect, this._materializedRect)) {
+            this._updatePages();
+        }
+        else {
+            // console.log('requiredRect contained in materialized', this._requiredRect, this._materializedRect);
+        }
+    };
+    /**
+     * This is an async debounced method that will try and increment the windows we render. If we can increment
+     * either, we increase the amount we render and re-evaluate.
+     */
+    List.prototype._onAsyncIdle = function () {
+        var _a = this.props, renderedWindowsAhead = _a.renderedWindowsAhead, renderedWindowsBehind = _a.renderedWindowsBehind;
+        var _b = this, requiredWindowsAhead = _b._requiredWindowsAhead, requiredWindowsBehind = _b._requiredWindowsBehind;
+        var windowsAhead = Math.min(renderedWindowsAhead, requiredWindowsAhead + 1);
+        var windowsBehind = Math.min(renderedWindowsBehind, requiredWindowsBehind + 1);
+        if (windowsAhead !== requiredWindowsAhead || windowsBehind !== requiredWindowsBehind) {
+            // console.log('idling', windowsBehind, windowsAhead);
+            this._requiredWindowsAhead = windowsAhead;
+            this._requiredWindowsBehind = windowsBehind;
+            this._updateRenderRects();
+            this._updatePages();
+        }
+        if (renderedWindowsAhead > windowsAhead || renderedWindowsBehind > windowsBehind) {
+            // Async increment on next tick.
+            this._onAsyncIdle();
+        }
+    };
+    /**
+     * Function to call when the list is done scrolling.
+     * This function is debounced.
+     */
+    List.prototype._onScrollingDone = function () {
+        this.setState({ isScrolling: false });
+    };
+    List.prototype._onAsyncResize = function () {
+        this.forceUpdate();
+    };
+    List.prototype._updatePages = function (props) {
+        // console.log('updating pages');
+        var _this = this;
+        if (props === void 0) { props = this.props; }
+        if (!this._requiredRect) {
+            this._updateRenderRects(props);
+        }
+        var newListState = this._buildPages(props);
+        var oldListPages = this.state.pages;
+        this.setState(newListState, function () {
+            // If we weren't provided with the page height, measure the pages
+            if (!props.getPageHeight) {
+                // If measured version is invalid since we've updated the DOM
+                var heightsChanged = _this._updatePageMeasurements(oldListPages, newListState.pages);
+                // On first render, we should re-measure so that we don't get a visual glitch.
+                if (heightsChanged) {
+                    _this._materializedRect = null;
+                    if (!_this._hasCompletedFirstRender) {
+                        _this._hasCompletedFirstRender = true;
+                        _this._updatePages(props);
+                    }
+                    else {
+                        _this._onAsyncScroll();
+                    }
+                }
+                else {
+                    // Enqueue an idle bump.
+                    _this._onAsyncIdle();
+                }
+            }
+            else {
+                // Enqueue an idle bump
+                _this._onAsyncIdle();
+            }
+        });
+    };
+    List.prototype._updatePageMeasurements = function (oldPages, newPages) {
+        var renderedIndexes = {};
+        var heightChanged = false;
+        // when not in virtualize mode, we render all the items without page measurement
+        if (!this._shouldVirtualize()) {
+            return heightChanged;
+        }
+        for (var i = 0; i < oldPages.length; i++) {
+            var page = oldPages[i];
+            if (page.items) {
+                renderedIndexes[page.startIndex] = page;
+            }
+        }
+        for (var i = 0; i < newPages.length; i++) {
+            var page = newPages[i];
+            if (page.items) {
+                heightChanged = this._measurePage(page) || heightChanged;
+                if (!renderedIndexes[page.startIndex]) {
+                    this._onPageAdded(page);
+                }
+                else {
+                    delete renderedIndexes[page.startIndex];
+                }
+            }
+        }
+        for (var index in renderedIndexes) {
+            if (renderedIndexes.hasOwnProperty(index)) {
+                this._onPageRemoved(renderedIndexes[index]);
+            }
+        }
+        return heightChanged;
+    };
+    /**
+     * Given a page, measure its dimensions, update cache.
+     * @returns True if the height has changed.
+     */
+    List.prototype._measurePage = function (page) {
+        var hasChangedHeight = false;
+        var pageElement = this.refs[page.key];
+        var cachedHeight = this._cachedPageHeights[page.startIndex];
+        // console.log('   * measure attempt', page.startIndex, cachedHeight);
+        if (pageElement && this._shouldVirtualize() && (!cachedHeight || cachedHeight.measureVersion !== this._measureVersion)) {
+            var newClientRect = {
+                width: pageElement.clientWidth,
+                height: pageElement.clientHeight
+            };
+            if (newClientRect.height || newClientRect.width) {
+                hasChangedHeight = page.height !== newClientRect.height;
+                // console.warn(' *** expensive page measure', page.startIndex, page.height, newClientRect.height);
+                page.height = newClientRect.height;
+                this._cachedPageHeights[page.startIndex] = {
+                    height: newClientRect.height,
+                    measureVersion: this._measureVersion
+                };
+                this._estimatedPageHeight = Math.round(((this._estimatedPageHeight * this._totalEstimates) + newClientRect.height) /
+                    (this._totalEstimates + 1));
+                this._totalEstimates++;
+            }
+        }
+        return hasChangedHeight;
+    };
+    /** Called when a page has been added to the DOM. */
+    List.prototype._onPageAdded = function (page) {
+        var onPageAdded = this.props.onPageAdded;
+        // console.log('page added', page.startIndex, this.state.pages.map(page => page.key).join(', '));
+        if (onPageAdded) {
+            onPageAdded(page);
+        }
+    };
+    /** Called when a page has been removed from the DOM. */
+    List.prototype._onPageRemoved = function (page) {
+        var onPageRemoved = this.props.onPageRemoved;
+        // console.log('  --- page removed', page.startIndex, this.state.pages.map(page => page.key).join(', '));
+        if (onPageRemoved) {
+            onPageRemoved(page);
+        }
+    };
+    /** Build up the pages that should be rendered. */
+    List.prototype._buildPages = function (props) {
+        var items = props.items, startIndex = props.startIndex, renderCount = props.renderCount, getPageHeight = props.getPageHeight;
+        renderCount = this._getRenderCount(props);
+        var materializedRect = tslib_1.__assign({}, EMPTY_RECT);
+        var pages = [];
+        var itemsPerPage = 1;
+        var pageTop = 0;
+        var currentSpacer = null;
+        var focusedIndex = this._focusedIndex;
+        var endIndex = startIndex + renderCount;
+        var shouldVirtualize = this._shouldVirtualize(props);
+        // First render is very important to track; when we render cells, we have no idea of estimated page height.
+        // So we should default to rendering only the first page so that we can get information.
+        // However if the user provides a measure function, let's just assume they know the right heights.
+        var isFirstRender = this._estimatedPageHeight === 0 && !getPageHeight;
+        var allowedRect = this._allowedRect;
+        var _loop_1 = function (itemIndex) {
+            var pageSpecification = this_1._getPageSpecification(itemIndex, allowedRect);
+            var pageHeight = pageSpecification.height;
+            var pageData = pageSpecification.data;
+            var key = pageSpecification.key;
+            itemsPerPage = pageSpecification.itemCount;
+            var pageBottom = pageTop + pageHeight - 1;
+            var isPageRendered = Utilities_1.findIndex(this_1.state.pages, function (page) { return !!page.items && page.startIndex === itemIndex; }) > -1;
+            var isPageInAllowedRange = !allowedRect || pageBottom >= allowedRect.top && pageTop <= allowedRect.bottom;
+            var isPageInRequiredRange = !this_1._requiredRect || pageBottom >= this_1._requiredRect.top && pageTop <= this_1._requiredRect.bottom;
+            var isPageVisible = !isFirstRender && (isPageInRequiredRange || (isPageInAllowedRange && isPageRendered)) || !shouldVirtualize;
+            var isPageFocused = focusedIndex >= itemIndex && focusedIndex < (itemIndex + itemsPerPage);
+            var isFirstPage = itemIndex === startIndex;
+            // console.log('building page', itemIndex, 'pageTop: ' + pageTop, 'inAllowed: ' + isPageInAllowedRange, 'inRequired: ' + isPageInRequiredRange);
+            // Only render whats visible, focused, or first page,
+            // or when running in fast rendering mode (not in virtualized mode), we render all current items in pages
+            if (isPageVisible || isPageFocused || isFirstPage) {
+                if (currentSpacer) {
+                    pages.push(currentSpacer);
+                    currentSpacer = null;
+                }
+                var itemsInPage = Math.min(itemsPerPage, endIndex - itemIndex);
+                var newPage = this_1._createPage(key, items.slice(itemIndex, itemIndex + itemsInPage), itemIndex, undefined, undefined, pageData);
+                newPage.top = pageTop;
+                newPage.height = pageHeight;
+                pages.push(newPage);
+                if (isPageInRequiredRange && this_1._allowedRect) {
+                    _mergeRect(materializedRect, {
+                        top: pageTop,
+                        bottom: pageBottom,
+                        height: pageHeight,
+                        left: allowedRect.left,
+                        right: allowedRect.right,
+                        width: allowedRect.width
+                    });
+                }
+            }
+            else {
+                if (!currentSpacer) {
+                    currentSpacer = this_1._createPage('spacer-' + itemIndex, undefined, itemIndex, 0, undefined, pageData);
+                }
+                currentSpacer.height = (currentSpacer.height || 0) + (pageBottom - pageTop) + 1;
+                currentSpacer.itemCount += itemsPerPage;
+            }
+            pageTop += (pageBottom - pageTop + 1);
+            // in virtualized mode, we render need to render first page then break and measure,
+            // otherwise, we render all items without measurement to make rendering fast
+            if (isFirstRender && shouldVirtualize) {
+                return "break";
+            }
+        };
+        var this_1 = this;
+        for (var itemIndex = startIndex; itemIndex < endIndex; itemIndex += itemsPerPage) {
+            var state_1 = _loop_1(itemIndex);
+            if (state_1 === "break")
+                break;
+        }
+        if (currentSpacer) {
+            currentSpacer.key = 'spacer-end';
+            pages.push(currentSpacer);
+        }
+        this._materializedRect = materializedRect;
+        // console.log('materialized: ', materializedRect);
+        return {
+            pages: pages,
+            measureVersion: this._measureVersion
+        };
+    };
+    List.prototype._getPageSpecification = function (itemIndex, visibleRect) {
+        var getPageSpecification = this.props.getPageSpecification;
+        if (getPageSpecification) {
+            var pageData = getPageSpecification(itemIndex, visibleRect);
+            var _a = pageData.itemCount, itemCount = _a === void 0 ? this._getItemCountForPage(itemIndex, visibleRect) : _a;
+            var _b = pageData.height, height = _b === void 0 ? this._getPageHeight(itemIndex, itemCount, visibleRect) : _b;
+            return {
+                itemCount: itemCount,
+                height: height,
+                data: pageData.data,
+                key: pageData.key
+            };
+        }
+        else {
+            var itemCount = this._getItemCountForPage(itemIndex, visibleRect);
+            return {
+                itemCount: itemCount,
+                height: this._getPageHeight(itemIndex, itemCount, visibleRect)
+            };
+        }
+    };
+    /**
+     * Get the pixel height of a give page. Will use the props getPageHeight first, and if not provided, fallback to
+     * cached height, or estimated page height, or default page height.
+     */
+    List.prototype._getPageHeight = function (itemIndex, itemsPerPage, visibleRect) {
+        if (this.props.getPageHeight) {
+            return this.props.getPageHeight(itemIndex, visibleRect);
+        }
+        else {
+            var cachedHeight = (this._cachedPageHeights[itemIndex]);
+            return cachedHeight ? cachedHeight.height : (this._estimatedPageHeight || DEFAULT_PAGE_HEIGHT);
+        }
+    };
+    List.prototype._getItemCountForPage = function (itemIndex, visibileRect) {
+        var itemsPerPage = this.props.getItemCountForPage ? this.props.getItemCountForPage(itemIndex, visibileRect) : DEFAULT_ITEMS_PER_PAGE;
+        return itemsPerPage ? itemsPerPage : DEFAULT_ITEMS_PER_PAGE;
+    };
+    List.prototype._createPage = function (pageKey, items, startIndex, count, style, data) {
+        if (startIndex === void 0) { startIndex = -1; }
+        if (count === void 0) { count = items ? items.length : 0; }
+        if (style === void 0) { style = {}; }
+        if (data === void 0) { data = undefined; }
+        pageKey = pageKey || ('page-' + startIndex);
+        var cachedPage = this._pageCache[pageKey];
+        if (cachedPage && cachedPage.page) {
+            return cachedPage.page;
+        }
+        // Fill undefined cells because array.map will ignore undefined cells.
+        if (items) {
+            for (var i = 0; i < items.length; i++) {
+                items[i] = items[i] || undefined;
+            }
+        }
+        return {
+            key: pageKey,
+            startIndex: startIndex,
+            itemCount: count,
+            items: items,
+            style: style || {},
+            top: 0,
+            height: 0,
+            data: data
+        };
+    };
+    List.prototype._getRenderCount = function (props) {
+        var _a = props || this.props, items = _a.items, startIndex = _a.startIndex, renderCount = _a.renderCount;
+        return (renderCount === undefined ? (items ? items.length - startIndex : 0) : renderCount);
+    };
+    /** Calculate the visible rect within the list where top: 0 and left: 0 is the top/left of the list. */
+    List.prototype._updateRenderRects = function (props, forceUpdate) {
+        props = props || this.props;
+        var renderedWindowsAhead = props.renderedWindowsAhead, renderedWindowsBehind = props.renderedWindowsBehind;
+        var pages = this.state.pages;
+        // when not in virtualize mode, we render all items without measurement to optimize page rendering perf
+        if (!this._shouldVirtualize()) {
+            return;
+        }
+        var surfaceRect = this._surfaceRect;
+        var scrollHeight = this._scrollElement && this._scrollElement.scrollHeight;
+        var scrollTop = this._scrollElement ? this._scrollElement.scrollTop : 0;
+        // WARNING: EXPENSIVE CALL! We need to know the surface top relative to the window.
+        // This needs to be called to recalculate when new pages should be loaded.
+        // We check to see how far we've scrolled and if it's further than a third of a page we run it again.
+        if (forceUpdate ||
+            !pages ||
+            !this._surfaceRect ||
+            !scrollHeight ||
+            scrollHeight !== this._scrollHeight ||
+            Math.abs(this._scrollTop - scrollTop) > this._estimatedPageHeight / 3) {
+            surfaceRect = this._surfaceRect = _measureSurfaceRect(this.refs.surface);
+            this._scrollTop = scrollTop;
+        }
+        // If the scroll height has changed, something in the container likely resized and
+        // we should redo the page heights incase their content resized.
+        if (forceUpdate ||
+            !scrollHeight ||
+            scrollHeight !== this._scrollHeight) {
+            this._measureVersion++;
+        }
+        this._scrollHeight = scrollHeight;
+        // If the surface is above the container top or below the container bottom, or if this is not the first
+        // render return empty rect.
+        // The first time the list gets rendered we need to calculate the rectangle. The width of the list is
+        // used to calculate the width of the list items.
+        var visibleTop = Math.max(0, -surfaceRect.top);
+        var visibleRect = {
+            top: visibleTop,
+            left: surfaceRect.left,
+            bottom: visibleTop + window.innerHeight,
+            right: surfaceRect.right,
+            width: surfaceRect.width,
+            height: window.innerHeight
+        };
+        // The required/allowed rects are adjusted versions of the visible rect.
+        this._requiredRect = _expandRect(visibleRect, this._requiredWindowsBehind, this._requiredWindowsAhead);
+        this._allowedRect = _expandRect(visibleRect, renderedWindowsBehind, renderedWindowsAhead);
+    };
+    List.defaultProps = {
+        startIndex: 0,
+        onRenderCell: function (item, index, containsFocus) { return (React.createElement("div", null, (item && item.name) || '')); },
+        renderedWindowsAhead: DEFAULT_RENDERED_WINDOWS_AHEAD,
+        renderedWindowsBehind: DEFAULT_RENDERED_WINDOWS_BEHIND
+    };
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], List.prototype, "_onRenderPage", null);
+    return List;
+}(Utilities_1.BaseComponent));
+exports.List = List;
+function _expandRect(rect, pagesBefore, pagesAfter) {
+    var top = rect.top - (pagesBefore * rect.height);
+    var height = rect.height + ((pagesBefore + pagesAfter) * rect.height);
+    return {
+        top: top,
+        bottom: top + height,
+        height: height,
+        left: rect.left,
+        right: rect.right,
+        width: rect.width
+    };
+}
+function _isContainedWithin(innerRect, outerRect) {
+    return (innerRect.top >= outerRect.top &&
+        innerRect.left >= outerRect.left &&
+        innerRect.bottom <= outerRect.bottom &&
+        innerRect.right <= outerRect.right);
+}
+function _mergeRect(targetRect, newRect) {
+    targetRect.top = (newRect.top < targetRect.top || targetRect.top === -1) ? newRect.top : targetRect.top;
+    targetRect.left = (newRect.left < targetRect.left || targetRect.left === -1) ? newRect.left : targetRect.left;
+    targetRect.bottom = (newRect.bottom > targetRect.bottom || targetRect.bottom === -1) ? newRect.bottom : targetRect.bottom;
+    targetRect.right = (newRect.right > targetRect.right || targetRect.right === -1) ? newRect.right : targetRect.right;
+    targetRect.width = targetRect.right - targetRect.left + 1;
+    targetRect.height = targetRect.bottom - targetRect.top + 1;
+    return targetRect;
+}
+
+
+/***/ }),
+/* 225 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(226);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {"hmr":true}
+options.transform = transform
+// add the styles to the DOM
+var update = __webpack_require__(6)(content, options);
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/cjs.js!./HistoryList.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/cjs.js!./HistoryList.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 226 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(5)(undefined);
+// imports
+
+
+// module
+exports.push([module.i, "", ""]);
+
+// exports
+
+
+/***/ }),
+/* 227 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var React = __webpack_require__(1);
+var DatePicker_1 = __webpack_require__(228);
+__webpack_require__(241);
+var Label_1 = __webpack_require__(10);
+var DateFilter = /** @class */ (function (_super) {
+    __extends(DateFilter, _super);
+    function DateFilter() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    DateFilter.prototype.render = function () {
+        return React.createElement("div", { className: "DateFilter" },
+            React.createElement(Label_1.Label, { className: "DateFilter-StartDateLabel" }, "Select a start date:"),
+            React.createElement(DatePicker_1.DatePicker, { className: "DateFilter-StartDatePicker", placeholder: 'Select a date...' }),
+            React.createElement(Label_1.Label, { className: "DateFilter-EndDateLabel" }, "Select a end date:"),
+            React.createElement(DatePicker_1.DatePicker, { className: "DateFilter-EndDatePicker", placeholder: 'Select a date...' }));
+    };
+    return DateFilter;
+}(React.Component));
+exports.DateFilter = DateFilter;
+
+
+/***/ }),
+/* 228 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+tslib_1.__exportStar(__webpack_require__(229), exports);
+
+
+/***/ }),
+/* 229 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+tslib_1.__exportStar(__webpack_require__(230), exports);
+tslib_1.__exportStar(__webpack_require__(70), exports);
+
+
+/***/ }),
+/* 230 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+var React = __webpack_require__(1);
+var Calendar_1 = __webpack_require__(231);
+var DateValues_1 = __webpack_require__(16);
+var Callout_1 = __webpack_require__(58);
+var TextField_1 = __webpack_require__(71);
+var Utilities_1 = __webpack_require__(2);
+var DateMath_1 = __webpack_require__(24);
+var stylesImport = __webpack_require__(240);
+var styles = stylesImport;
+var DEFAULT_STRINGS = {
+    months: [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December'
+    ],
+    shortMonths: [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+    ],
+    days: [
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday'
+    ],
+    shortDays: [
+        'S',
+        'M',
+        'T',
+        'W',
+        'T',
+        'F',
+        'S'
+    ],
+    goToToday: 'Go to today',
+    prevMonthAriaLabel: 'Go to previous month',
+    nextMonthAriaLabel: 'Go to next month',
+    prevYearAriaLabel: 'Go to previous year',
+    nextYearAriaLabel: 'Go to next year'
+};
+var DatePicker = /** @class */ (function (_super) {
+    tslib_1.__extends(DatePicker, _super);
+    function DatePicker(props) {
+        var _this = _super.call(this, props) || this;
+        var formatDate = props.formatDate, value = props.value;
+        _this.state = {
+            selectedDate: value || new Date(),
+            formattedDate: (formatDate && value) ? formatDate(value) : '',
+            isDatePickerShown: false,
+            errorMessage: undefined
+        };
+        _this._preventFocusOpeningPicker = false;
+        return _this;
+    }
+    DatePicker.prototype.componentWillReceiveProps = function (nextProps) {
+        var formatDate = nextProps.formatDate, isRequired = nextProps.isRequired, strings = nextProps.strings, value = nextProps.value, minDate = nextProps.minDate, maxDate = nextProps.maxDate;
+        var errorMessage = (isRequired && !value) ? (strings.isRequiredErrorMessage || '*') : undefined;
+        if (!errorMessage && value) {
+            errorMessage = this._isDateOutOfBounds(value, minDate, maxDate) ? strings.isOutOfBoundsErrorMessage || '*' : undefined;
+        }
+        // Set error message
+        this.setState({
+            errorMessage: errorMessage
+        });
+        // Issue# 1274: Check if the date value changed from old value, i.e., if indeed a new date is being
+        // passed in or if the formatting function was modified. We only update the selected date if either of these
+        // had a legit change. Note tha the bug will still repro when only the formatDate was passed in props and this
+        // is the result of the onSelectDate callback, but this should be a rare scenario.
+        var oldValue = this.state.selectedDate;
+        if (!DateMath_1.compareDates(oldValue, value) || this.props.formatDate !== formatDate) {
+            this.setState({
+                selectedDate: value || new Date(),
+                formattedDate: (formatDate && value) ? formatDate(value) : '',
+            });
+        }
+    };
+    DatePicker.prototype.render = function () {
+        var _a = this.props, firstDayOfWeek = _a.firstDayOfWeek, strings = _a.strings, label = _a.label, isRequired = _a.isRequired, disabled = _a.disabled, ariaLabel = _a.ariaLabel, pickerAriaLabel = _a.pickerAriaLabel, placeholder = _a.placeholder, allowTextInput = _a.allowTextInput, borderless = _a.borderless, className = _a.className, minDate = _a.minDate, maxDate = _a.maxDate, calendarProps = _a.calendarProps;
+        var _b = this.state, isDatePickerShown = _b.isDatePickerShown, formattedDate = _b.formattedDate, selectedDate = _b.selectedDate, errorMessage = _b.errorMessage;
+        return (React.createElement("div", { className: Utilities_1.css('ms-DatePicker', styles.root, className), ref: this._resolveRef('_root') },
+            React.createElement("div", { ref: this._resolveRef('_datepicker') },
+                React.createElement(TextField_1.TextField, { className: styles.textField, ariaLabel: ariaLabel, "aria-haspopup": 'true', "aria-expanded": isDatePickerShown, required: isRequired, disabled: disabled, onKeyDown: this._onTextFieldKeyDown, onFocus: this._onTextFieldFocus, onBlur: this._onTextFieldBlur, onClick: this._onTextFieldClick, onChanged: this._onTextFieldChanged, errorMessage: errorMessage, label: label, placeholder: placeholder, borderless: borderless, iconProps: {
+                        iconName: 'Calendar',
+                        onClick: this._onIconClick,
+                        className: Utilities_1.css(label ? 'ms-DatePicker-event--with-label' : 'ms-DatePicker-event--without-label', label ? styles.eventWithLabel : styles.eventWithoutLabel)
+                    }, readOnly: !allowTextInput, value: formattedDate, ref: this._resolveRef('_textField'), role: allowTextInput ? 'combobox' : 'menu' })),
+            isDatePickerShown && (React.createElement(Callout_1.Callout, { role: 'dialog', ariaLabel: pickerAriaLabel, isBeakVisible: false, className: Utilities_1.css('ms-DatePicker-callout'), gapSpace: 0, doNotLayer: false, target: this._datepicker, directionalHint: 4 /* bottomLeftEdge */, onDismiss: this._calendarDismissed, onPositioned: this._onCalloutPositioned },
+                React.createElement(Calendar_1.Calendar, tslib_1.__assign({}, calendarProps, { onSelectDate: this._onSelectDate, onDismiss: this._calendarDismissed, isMonthPickerVisible: this.props.isMonthPickerVisible, showMonthPickerAsOverlay: this.props.showMonthPickerAsOverlay, today: this.props.today, value: selectedDate, firstDayOfWeek: firstDayOfWeek, strings: strings, highlightCurrentMonth: this.props.highlightCurrentMonth, showWeekNumbers: this.props.showWeekNumbers, firstWeekOfYear: this.props.firstWeekOfYear, showGoToToday: this.props.showGoToToday, dateTimeFormatter: this.props.dateTimeFormatter, minDate: minDate, maxDate: maxDate, ref: this._resolveRef('_calendar') }))))));
+    };
+    DatePicker.prototype._onSelectDate = function (date) {
+        var _a = this.props, formatDate = _a.formatDate, onSelectDate = _a.onSelectDate;
+        this.setState({
+            selectedDate: date,
+            isDatePickerShown: false,
+            formattedDate: formatDate && date ? formatDate(date) : '',
+        }, function () {
+            if (onSelectDate) {
+                onSelectDate(date);
+            }
+        });
+    };
+    DatePicker.prototype._onCalloutPositioned = function () {
+        this._calendar.focus();
+    };
+    DatePicker.prototype._onTextFieldFocus = function (ev) {
+        if (this.props.disableAutoFocus) {
+            return;
+        }
+        if (!this.props.allowTextInput) {
+            if (!this._preventFocusOpeningPicker) {
+                this._showDatePickerPopup();
+            }
+            else {
+                this._preventFocusOpeningPicker = false;
+            }
+        }
+    };
+    DatePicker.prototype._onTextFieldBlur = function (ev) {
+        this._validateTextInput();
+    };
+    DatePicker.prototype._onTextFieldChanged = function (newValue) {
+        if (this.props.allowTextInput) {
+            if (this.state.isDatePickerShown) {
+                this._dismissDatePickerPopup();
+            }
+            var _a = this.props, isRequired = _a.isRequired, value = _a.value, strings = _a.strings;
+            this.setState({
+                errorMessage: (isRequired && !value) ? (strings.isRequiredErrorMessage || '*') : undefined,
+                formattedDate: newValue
+            });
+        }
+    };
+    DatePicker.prototype._onTextFieldKeyDown = function (ev) {
+        switch (ev.which) {
+            case 13 /* enter */:
+                ev.preventDefault();
+                ev.stopPropagation();
+                if (!this.state.isDatePickerShown) {
+                    this._showDatePickerPopup();
+                }
+                else {
+                    // When DatePicker allows input date string directly,
+                    // it is expected to hit another enter to close the popup
+                    if (this.props.allowTextInput) {
+                        this._dismissDatePickerPopup();
+                    }
+                }
+                break;
+            case 27 /* escape */:
+                this._handleEscKey(ev);
+                break;
+            default:
+                break;
+        }
+    };
+    DatePicker.prototype._onTextFieldClick = function (ev) {
+        if (!this.state.isDatePickerShown) {
+            this._showDatePickerPopup();
+        }
+        else {
+            if (this.props.allowTextInput) {
+                this.setState({
+                    isDatePickerShown: false
+                });
+            }
+        }
+    };
+    DatePicker.prototype._onIconClick = function (ev) {
+        ev.stopPropagation();
+        this._onTextFieldClick(ev);
+    };
+    DatePicker.prototype._showDatePickerPopup = function () {
+        if (!this.state.isDatePickerShown) {
+            this._preventFocusOpeningPicker = true;
+            this._focusOnSelectedDateOnUpdate = true;
+            this.setState({
+                isDatePickerShown: true,
+                navigatedDate: this.state.selectedDate,
+                errorMessage: ''
+            });
+        }
+    };
+    DatePicker.prototype._dismissDatePickerPopup = function () {
+        if (this.state.isDatePickerShown) {
+            this.setState({
+                isDatePickerShown: false
+            });
+            this._validateTextInput();
+        }
+    };
+    /**
+     * Callback for closing the calendar callout
+     */
+    DatePicker.prototype._calendarDismissed = function () {
+        this._preventFocusOpeningPicker = true;
+        this._dismissDatePickerPopup();
+        if (this._textField) {
+            this._textField.focus();
+        }
+    };
+    DatePicker.prototype._handleEscKey = function (ev) {
+        this._calendarDismissed();
+    };
+    DatePicker.prototype._validateTextInput = function () {
+        var _a = this.props, isRequired = _a.isRequired, allowTextInput = _a.allowTextInput, strings = _a.strings, parseDateFromString = _a.parseDateFromString, onSelectDate = _a.onSelectDate, formatDate = _a.formatDate, minDate = _a.minDate, maxDate = _a.maxDate;
+        var inputValue = this.state.formattedDate;
+        // Do validation only if DatePicker's popup is dismissed
+        if (this.state.isDatePickerShown) {
+            return;
+        }
+        // Check when DatePicker is a required field but has NO input value
+        if (isRequired && !inputValue) {
+            this.setState({
+                // Since fabic react doesn't have loc support yet
+                // use the symbol '*' to represent error message
+                errorMessage: strings.isRequiredErrorMessage || '*'
+            });
+            return;
+        }
+        if (allowTextInput) {
+            var date = null;
+            if (inputValue) {
+                // Don't parse if the selected date has the same formatted string as what we're about to parse.
+                // The formatted string might be ambiguous (ex: "1/2/3" or "New Year Eve") and the parser might
+                // not be able to come up with the exact same date.
+                if (this.state.selectedDate && formatDate && formatDate(this.state.selectedDate) === inputValue) {
+                    date = this.state.selectedDate;
+                }
+                else {
+                    date = parseDateFromString(inputValue);
+                    // Check if date is null, or date is Invalid Date
+                    if (!date || isNaN(date.getTime())) {
+                        // Reset invalid input field, if formatting is available
+                        if (formatDate) {
+                            date = this.state.selectedDate;
+                            this.setState({
+                                formattedDate: formatDate(date).toString()
+                            });
+                        }
+                        this.setState({
+                            errorMessage: strings.invalidInputErrorMessage || '*'
+                        });
+                    }
+                    else {
+                        // Check against optional date boundaries
+                        if (this._isDateOutOfBounds(date, minDate, maxDate)) {
+                            this.setState({
+                                errorMessage: strings.isOutOfBoundsErrorMessage || '*'
+                            });
+                        }
+                        else {
+                            this.setState({
+                                selectedDate: date,
+                                errorMessage: ''
+                            });
+                            // When formatting is available. If formatted date is valid, but is different from input, update with formatted date
+                            // This occurs when an invalid date is entered twice
+                            if (formatDate && formatDate(date) !== inputValue) {
+                                this.setState({
+                                    formattedDate: formatDate(date).toString()
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            else {
+                // No input date string shouldn't be an error if field is not required
+                this.setState({
+                    errorMessage: ''
+                });
+            }
+            // Execute onSelectDate callback
+            if (onSelectDate) {
+                // If no input date string or input date string is invalid
+                // date variable will be null, callback should expect null value for this case
+                onSelectDate(date);
+            }
+        }
+    };
+    DatePicker.prototype._isDateOutOfBounds = function (date, minDate, maxDate) {
+        return ((!!minDate && DateMath_1.compareDatePart(minDate, date) > 0) || (!!maxDate && DateMath_1.compareDatePart(maxDate, date) < 0));
+    };
+    DatePicker.defaultProps = {
+        allowTextInput: false,
+        formatDate: function (date) {
+            if (date) {
+                return date.toDateString();
+            }
+            return '';
+        },
+        parseDateFromString: function (dateStr) {
+            var date = Date.parse(dateStr);
+            if (date) {
+                return new Date(date);
+            }
+            return null;
+        },
+        firstDayOfWeek: Calendar_1.DayOfWeek.Sunday,
+        isRequired: false,
+        isMonthPickerVisible: true,
+        showMonthPickerAsOverlay: false,
+        strings: DEFAULT_STRINGS,
+        highlightCurrentMonth: false,
+        borderless: false,
+        pickerAriaLabel: 'Calender',
+        showWeekNumbers: false,
+        firstWeekOfYear: DateValues_1.FirstWeekOfYear.FirstDay,
+        showGoToToday: true,
+        dateTimeFormatter: undefined
+    };
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], DatePicker.prototype, "_onSelectDate", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], DatePicker.prototype, "_onCalloutPositioned", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], DatePicker.prototype, "_onTextFieldFocus", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], DatePicker.prototype, "_onTextFieldBlur", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], DatePicker.prototype, "_onTextFieldChanged", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], DatePicker.prototype, "_onTextFieldKeyDown", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], DatePicker.prototype, "_onTextFieldClick", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], DatePicker.prototype, "_onIconClick", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], DatePicker.prototype, "_dismissDatePickerPopup", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], DatePicker.prototype, "_calendarDismissed", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], DatePicker.prototype, "_handleEscKey", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], DatePicker.prototype, "_validateTextInput", null);
+    return DatePicker;
+}(Utilities_1.BaseComponent));
+exports.DatePicker = DatePicker;
+
+
+/***/ }),
+/* 231 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+tslib_1.__exportStar(__webpack_require__(232), exports);
+
+
+/***/ }),
+/* 232 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+tslib_1.__exportStar(__webpack_require__(233), exports);
+tslib_1.__exportStar(__webpack_require__(70), exports);
+
+
+/***/ }),
+/* 233 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+var React = __webpack_require__(1);
+var DateValues_1 = __webpack_require__(16);
+var CalendarDay_1 = __webpack_require__(234);
+var CalendarMonth_1 = __webpack_require__(236);
+var DateMath_1 = __webpack_require__(24);
+var Utilities_1 = __webpack_require__(2);
+var stylesImport = __webpack_require__(36);
+var styles = stylesImport;
+var leftArrow = 'Up';
+var rightArrow = 'Down';
+var iconStrings = {
+    leftNavigation: leftArrow,
+    rightNavigation: rightArrow
+};
+var dateTimeFormatterCallbacks = {
+    formatMonthDayYear: function (date, strings) { return (strings.months[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear()); },
+    formatMonthYear: function (date, strings) { return (strings.months[date.getMonth()] + ' ' + date.getFullYear()); },
+    formatDay: function (date) { return date.getDate().toString(); },
+    formatYear: function (date) { return date.getFullYear().toString(); }
+};
+var Calendar = /** @class */ (function (_super) {
+    tslib_1.__extends(Calendar, _super);
+    function Calendar(props) {
+        var _this = _super.call(this, props) || this;
+        var currentDate = props.value && !isNaN(props.value.getTime()) ? props.value : (props.today || new Date());
+        _this.state = {
+            selectedDate: currentDate,
+            navigatedDate: currentDate,
+            /** When showMonthPickerAsOverlay is active it overrides isMonthPickerVisible/isDayPickerVisible props (These props permanently set the visibility of their respective calendars). */
+            isMonthPickerVisible: _this.props.showMonthPickerAsOverlay ? false : _this.props.isMonthPickerVisible,
+            isDayPickerVisible: _this.props.showMonthPickerAsOverlay ? true : _this.props.isDayPickerVisible
+        };
+        _this._focusOnUpdate = false;
+        return _this;
+    }
+    Calendar.prototype.componentWillReceiveProps = function (nextProps) {
+        var autoNavigateOnSelection = nextProps.autoNavigateOnSelection, value = nextProps.value, _a = nextProps.today, today = _a === void 0 ? new Date() : _a;
+        // Make sure auto-navigation is supported for programmatic changes to selected date, i.e.,
+        // if selected date is updated via props, we may need to modify the navigated date
+        var overrideNavigatedDate = (autoNavigateOnSelection && !DateMath_1.compareDates(value, this.props.value));
+        if (overrideNavigatedDate) {
+            this.setState({
+                navigatedDate: value
+            });
+        }
+        this.setState({
+            selectedDate: value || today
+        });
+    };
+    Calendar.prototype.componentDidUpdate = function () {
+        if (this._focusOnUpdate) {
+            // if the day picker is shown, focus on it
+            if (this.refs.dayPicker) {
+                this.refs.dayPicker.focus();
+            }
+            else if (this.refs.monthPicker) {
+                this.refs.monthPicker.focus();
+            }
+            this._focusOnUpdate = false;
+        }
+    };
+    Calendar.prototype.render = function () {
+        var rootClass = 'ms-DatePicker';
+        var _a = this.props, firstDayOfWeek = _a.firstDayOfWeek, dateRangeType = _a.dateRangeType, strings = _a.strings, showMonthPickerAsOverlay = _a.showMonthPickerAsOverlay, autoNavigateOnSelection = _a.autoNavigateOnSelection, showGoToToday = _a.showGoToToday, highlightCurrentMonth = _a.highlightCurrentMonth, navigationIcons = _a.navigationIcons, minDate = _a.minDate, maxDate = _a.maxDate;
+        var _b = this.state, selectedDate = _b.selectedDate, navigatedDate = _b.navigatedDate, isMonthPickerVisible = _b.isMonthPickerVisible, isDayPickerVisible = _b.isDayPickerVisible;
+        var onHeaderSelect = showMonthPickerAsOverlay ? this._onHeaderSelect : undefined;
+        var monthPickerOnly = !showMonthPickerAsOverlay && !isDayPickerVisible;
+        var overlayedWithButton = showMonthPickerAsOverlay && showGoToToday;
+        return (React.createElement("div", { className: Utilities_1.css(rootClass, styles.root), ref: 'root', role: 'application' },
+            React.createElement("div", { className: Utilities_1.css('ms-DatePicker-picker ms-DatePicker-picker--opened ms-DatePicker-picker--focused', styles.picker, styles.pickerIsOpened, styles.pickerIsFocused, isMonthPickerVisible && ('ms-DatePicker-monthPickerVisible ' + styles.monthPickerVisible), isMonthPickerVisible && isDayPickerVisible && ('ms-DatePicker-calendarsInline ' + styles.calendarsInline), monthPickerOnly && ('ms-DatePicker-monthPickerOnly ' + styles.monthPickerOnly), showMonthPickerAsOverlay && ('ms-DatePicker-monthPickerAsOverlay ' + styles.monthPickerAsOverlay)) },
+                React.createElement("div", { className: Utilities_1.css('ms-DatePicker-holder ms-slideDownIn10', styles.holder, overlayedWithButton && styles.holderWithButton), onKeyDown: this._onDatePickerPopupKeyDown },
+                    React.createElement("div", { className: Utilities_1.css('ms-DatePicker-frame', styles.frame) },
+                        React.createElement("div", { className: Utilities_1.css('ms-DatePicker-wrap', styles.wrap, showGoToToday && styles.goTodaySpacing) },
+                            isDayPickerVisible && React.createElement(CalendarDay_1.CalendarDay, { selectedDate: selectedDate, navigatedDate: navigatedDate, today: this.props.today, onSelectDate: this._onSelectDate, onNavigateDate: this._onNavigateDate, onDismiss: this.props.onDismiss, firstDayOfWeek: firstDayOfWeek, dateRangeType: dateRangeType, autoNavigateOnSelection: autoNavigateOnSelection, strings: strings, onHeaderSelect: onHeaderSelect, navigationIcons: navigationIcons, showWeekNumbers: this.props.showWeekNumbers, firstWeekOfYear: this.props.firstWeekOfYear, dateTimeFormatter: this.props.dateTimeFormatter, showSixWeeksByDefault: this.props.showSixWeeksByDefault, minDate: minDate, maxDate: maxDate, ref: 'dayPicker' }),
+                            isMonthPickerVisible && React.createElement(CalendarMonth_1.CalendarMonth, { navigatedDate: navigatedDate, strings: strings, onNavigateDate: this._onNavigateDate, today: this.props.today, highlightCurrentMonth: highlightCurrentMonth, onHeaderSelect: onHeaderSelect, navigationIcons: navigationIcons, dateTimeFormatter: this.props.dateTimeFormatter, minDate: minDate, maxDate: maxDate, ref: 'monthPicker' }),
+                            showGoToToday &&
+                                React.createElement("span", { role: 'button', className: Utilities_1.css('ms-DatePicker-goToday js-goToday', styles.goToday), onClick: this._onGotoToday, onKeyDown: this._onGotoTodayKeyDown, tabIndex: 0 }, strings.goToToday)))))));
+    };
+    Calendar.prototype.focus = function () {
+        if (this.refs.dayPicker) {
+            this.refs.dayPicker.focus();
+        }
+    };
+    Calendar.prototype._navigateDay = function (date) {
+        this.setState({
+            navigatedDate: date
+        });
+    };
+    Calendar.prototype._onNavigateDate = function (date, focusOnNavigatedDay) {
+        if (this.props.isDayPickerVisible || (!this.props.isDayPickerVisible && !focusOnNavigatedDay)) {
+            this._navigateDay(date);
+            this._focusOnUpdate = focusOnNavigatedDay;
+        }
+        else {
+            // if only the month picker is shown, select the chosen month
+            this._onSelectDate(date);
+        }
+    };
+    Calendar.prototype._onSelectDate = function (date, selectedDateRangeArray) {
+        var onSelectDate = this.props.onSelectDate;
+        this.setState({
+            selectedDate: date
+        });
+        if (onSelectDate) {
+            onSelectDate(date, selectedDateRangeArray);
+        }
+    };
+    Calendar.prototype._onHeaderSelect = function (focus) {
+        this.setState({
+            isDayPickerVisible: !this.state.isDayPickerVisible,
+            isMonthPickerVisible: !this.state.isMonthPickerVisible
+        });
+        if (focus) {
+            this._focusOnUpdate = true;
+        }
+    };
+    Calendar.prototype._onGotoToday = function () {
+        var _a = this.props, dateRangeType = _a.dateRangeType, firstDayOfWeek = _a.firstDayOfWeek, today = _a.today;
+        var dates = DateMath_1.getDateRangeArray(today, dateRangeType, firstDayOfWeek);
+        this._onSelectDate(today, dates);
+    };
+    Calendar.prototype._onGotoTodayKeyDown = function (ev) {
+        if (ev.which === 13 /* enter */ || ev.which === 32 /* space */) {
+            ev.preventDefault();
+            this._onGotoToday();
+        }
+        else if (ev.which === 9 /* tab */ && !ev.shiftKey) {
+            if (this.props.onDismiss) {
+                ev.stopPropagation();
+                ev.preventDefault();
+                this.props.onDismiss();
+            }
+        }
+    };
+    Calendar.prototype._onDatePickerPopupKeyDown = function (ev) {
+        switch (ev.which) {
+            case 13 /* enter */:
+                ev.preventDefault();
+                break;
+            case 8 /* backspace */:
+                ev.preventDefault();
+                break;
+            case 27 /* escape */:
+                this._handleEscKey(ev);
+                break;
+            default:
+                break;
+        }
+    };
+    Calendar.prototype._handleEscKey = function (ev) {
+        if (this.props.onDismiss) {
+            this.props.onDismiss();
+        }
+    };
+    Calendar.defaultProps = {
+        onSelectDate: undefined,
+        onDismiss: undefined,
+        isMonthPickerVisible: true,
+        isDayPickerVisible: true,
+        showMonthPickerAsOverlay: false,
+        value: undefined,
+        today: new Date(),
+        firstDayOfWeek: DateValues_1.DayOfWeek.Sunday,
+        dateRangeType: DateValues_1.DateRangeType.Day,
+        autoNavigateOnSelection: false,
+        showGoToToday: true,
+        strings: null,
+        highlightCurrentMonth: false,
+        navigationIcons: iconStrings,
+        showWeekNumbers: false,
+        firstWeekOfYear: DateValues_1.FirstWeekOfYear.FirstDay,
+        dateTimeFormatter: dateTimeFormatterCallbacks,
+        showSixWeeksByDefault: false,
+    };
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], Calendar.prototype, "_navigateDay", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], Calendar.prototype, "_onNavigateDate", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], Calendar.prototype, "_onSelectDate", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], Calendar.prototype, "_onHeaderSelect", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], Calendar.prototype, "_onGotoToday", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], Calendar.prototype, "_onGotoTodayKeyDown", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], Calendar.prototype, "_onDatePickerPopupKeyDown", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], Calendar.prototype, "_handleEscKey", null);
+    return Calendar;
+}(Utilities_1.BaseComponent));
+exports.Calendar = Calendar;
+
+
+/***/ }),
+/* 234 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+var React = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
+var DateValues_1 = __webpack_require__(16);
+var FocusZone_1 = __webpack_require__(21);
+var Icon_1 = __webpack_require__(8);
+var DateMath_1 = __webpack_require__(24);
+var stylesImport = __webpack_require__(36);
+var styles = stylesImport;
+var DAYS_IN_WEEK = 7;
+var CalendarDay = /** @class */ (function (_super) {
+    tslib_1.__extends(CalendarDay, _super);
+    function CalendarDay(props) {
+        var _this = _super.call(this, props) || this;
+        _this.state = {
+            activeDescendantId: Utilities_1.getId('DatePickerDay-active'),
+            weeks: _this._getWeeks(props)
+        };
+        _this._onSelectNextMonth = _this._onSelectNextMonth.bind(_this);
+        _this._onSelectPrevMonth = _this._onSelectPrevMonth.bind(_this);
+        return _this;
+    }
+    CalendarDay.prototype.componentWillReceiveProps = function (nextProps) {
+        this.setState({
+            weeks: this._getWeeks(nextProps)
+        });
+    };
+    CalendarDay.prototype.render = function () {
+        var _this = this;
+        var _a = this.state, activeDescendantId = _a.activeDescendantId, weeks = _a.weeks;
+        var _b = this.props, firstDayOfWeek = _b.firstDayOfWeek, strings = _b.strings, navigatedDate = _b.navigatedDate, selectedDate = _b.selectedDate, dateRangeType = _b.dateRangeType, navigationIcons = _b.navigationIcons, showWeekNumbers = _b.showWeekNumbers, firstWeekOfYear = _b.firstWeekOfYear, dateTimeFormatter = _b.dateTimeFormatter, minDate = _b.minDate, maxDate = _b.maxDate;
+        var dayPickerId = Utilities_1.getId('DatePickerDay-dayPicker');
+        var monthAndYearId = Utilities_1.getId('DatePickerDay-monthAndYear');
+        var leftNavigationIcon = navigationIcons.leftNavigation;
+        var rightNavigationIcon = navigationIcons.rightNavigation;
+        var weekNumbers = showWeekNumbers ? DateMath_1.getWeekNumbersInMonth(weeks.length, firstDayOfWeek, firstWeekOfYear, navigatedDate) : null;
+        var selectedDateWeekNumber = showWeekNumbers ? DateMath_1.getWeekNumber(selectedDate, firstDayOfWeek, firstWeekOfYear) : undefined;
+        // When the month is highlighted get the corner dates so that styles can be added to them
+        var weekCorners = {};
+        if (dateRangeType === DateValues_1.DateRangeType.Month && selectedDate.getMonth() === navigatedDate.getMonth() && selectedDate.getFullYear() === navigatedDate.getFullYear()) {
+            // navigatedDate is on the current month and current year
+            weekCorners = this._getWeekCornerStyles(weeks);
+        }
+        // determine if previous/next months are in bounds
+        var prevMonthInBounds = minDate ? DateMath_1.compareDatePart(minDate, DateMath_1.getMonthStart(navigatedDate)) < 0 : true;
+        var nextMonthInBounds = maxDate ? DateMath_1.compareDatePart(DateMath_1.getMonthEnd(navigatedDate), maxDate) < 0 : true;
+        return (React.createElement("div", { className: Utilities_1.css('ms-DatePicker-dayPicker', styles.dayPicker, showWeekNumbers && 'ms-DatePicker-showWeekNumbers' && styles.showWeekNumbers), id: dayPickerId },
+            React.createElement("div", { className: Utilities_1.css('ms-DatePicker-monthComponents', styles.monthComponents) },
+                React.createElement("div", { className: Utilities_1.css('ms-DatePicker-navContainer', styles.navContainer) },
+                    React.createElement("span", { className: Utilities_1.css('ms-DatePicker-prevMonth js-prevMonth', styles.prevMonth, (_c = {},
+                            _c['ms-DatePicker-prevMonth--disabled ' + styles.prevMonthIsDisabled] = !prevMonthInBounds,
+                            _c)), onClick: this._onSelectPrevMonth, onKeyDown: this._onPrevMonthKeyDown, "aria-controls": dayPickerId, "aria-label": strings.prevMonthAriaLabel ? strings.prevMonthAriaLabel + ' ' + strings.months[DateMath_1.addMonths(navigatedDate, -1).getMonth()] : undefined, role: 'button', tabIndex: 0 },
+                        React.createElement(Icon_1.Icon, { iconName: Utilities_1.getRTL() ? rightNavigationIcon : leftNavigationIcon })),
+                    React.createElement("span", { className: Utilities_1.css('ms-DatePicker-nextMonth js-nextMonth', styles.nextMonth, (_d = {},
+                            _d['ms-DatePicker-nextMonth--disabled ' + styles.nextMonthIsDisabled] = !nextMonthInBounds,
+                            _d)), onClick: this._onSelectNextMonth, onKeyDown: this._onNextMonthKeyDown, "aria-controls": dayPickerId, "aria-label": strings.nextMonthAriaLabel ? strings.nextMonthAriaLabel + ' ' + strings.months[DateMath_1.addMonths(navigatedDate, 1).getMonth()] : undefined, role: 'button', tabIndex: 0 },
+                        React.createElement(Icon_1.Icon, { iconName: Utilities_1.getRTL() ? leftNavigationIcon : rightNavigationIcon })))),
+            React.createElement("div", { className: Utilities_1.css('ms-DatePicker-header', styles.header) },
+                React.createElement("div", { "aria-live": 'polite', "aria-relevant": 'text', "aria-atomic": 'true', id: monthAndYearId }, this.props.onHeaderSelect ?
+                    React.createElement("div", { className: Utilities_1.css('ms-DatePicker-monthAndYear js-showMonthPicker', styles.monthAndYear, styles.headerToggleView), onClick: this._onHeaderSelect, onKeyDown: this._onHeaderKeyDown, "aria-label": dateTimeFormatter.formatMonthYear(navigatedDate, strings), role: 'button', tabIndex: 0 }, dateTimeFormatter.formatMonthYear(navigatedDate, strings))
+                    :
+                        React.createElement("div", { className: Utilities_1.css('ms-DatePicker-monthAndYear', styles.monthAndYear) }, dateTimeFormatter.formatMonthYear(navigatedDate, strings)))),
+            React.createElement(FocusZone_1.FocusZone, null,
+                showWeekNumbers ?
+                    React.createElement("table", { className: Utilities_1.css('ms-DatePicker-weekNumbers', styles.weekNumbers, 'ms-DatePicker-table', styles.table) },
+                        React.createElement("tbody", null, weekNumbers.map(function (weekNumber, index) {
+                            return React.createElement("tr", { key: index },
+                                React.createElement("td", null,
+                                    React.createElement("div", { className: Utilities_1.css('ms-DatePicker-day', styles.day, (_a = {},
+                                            _a['ms-DatePicker-week--highlighted ' + styles.weekIsHighlighted] = selectedDateWeekNumber === weekNumber,
+                                            _a)) },
+                                        React.createElement("span", null, weekNumber))));
+                            var _a;
+                        })))
+                    : null,
+                React.createElement("table", { className: Utilities_1.css('ms-DatePicker-table', styles.table), "aria-readonly": 'true', "aria-multiselectable": 'false', "aria-labelledby": monthAndYearId, "aria-activedescendant": activeDescendantId },
+                    React.createElement("thead", null,
+                        React.createElement("tr", null, strings.shortDays.map(function (val, index) {
+                            return React.createElement("th", { className: Utilities_1.css('ms-DatePicker-weekday', styles.weekday), role: 'grid', scope: 'col', key: index, title: strings.days[(index + firstDayOfWeek) % DAYS_IN_WEEK], "aria-label": strings.days[(index + firstDayOfWeek) % DAYS_IN_WEEK] }, strings.shortDays[(index + firstDayOfWeek) % DAYS_IN_WEEK]);
+                        }))),
+                    React.createElement("tbody", null, weeks.map(function (week, weekIndex) {
+                        return React.createElement("tr", { key: weekIndex, role: 'row' }, week.map(function (day, dayIndex) {
+                            var isNavigatedDate = DateMath_1.compareDates(navigatedDate, day.originalDate);
+                            return React.createElement("td", { key: day.key, className: Utilities_1.css((_a = {},
+                                    _a['ms-DatePicker-weekBackground ' + styles.weekBackground] = day.isSelected && dateRangeType === DateValues_1.DateRangeType.Week,
+                                    _a['ms-DatePicker-monthBackground ' + styles.monthBackground + ' ' + _this._getHighlightedCornerStyle(weekCorners, dayIndex, weekIndex)] = day.isInMonth && day.isSelected && dateRangeType === DateValues_1.DateRangeType.Month,
+                                    _a['ms-DatePicker-dayBackground ' + styles.dayBackground] = day.isSelected && dateRangeType === DateValues_1.DateRangeType.Day,
+                                    _a)) },
+                                React.createElement("div", { className: Utilities_1.css('ms-DatePicker-day', styles.day, (_b = {},
+                                        _b['ms-DatePicker-day--disabled ' + styles.dayIsDisabled] = !day.isInBounds,
+                                        _b['ms-DatePicker-day--infocus ' + styles.dayIsFocused] = day.isInBounds && day.isInMonth,
+                                        _b['ms-DatePicker-day--outfocus ' + styles.dayIsUnfocused] = day.isInBounds && !day.isInMonth,
+                                        _b['ms-DatePicker-day--today ' + styles.dayIsToday] = day.isToday,
+                                        _b['ms-DatePicker-day--highlighted ' + styles.dayIsHighlighted] = day.isSelected && dateRangeType === DateValues_1.DateRangeType.Day,
+                                        _b)), role: 'gridcell', onClick: day.isInBounds ? day.onSelected : undefined, onKeyDown: _this._onDayKeyDown(day.originalDate, weekIndex, dayIndex), "aria-label": dateTimeFormatter.formatMonthDayYear(day.originalDate, strings), id: isNavigatedDate ? activeDescendantId : undefined, "aria-selected": day.isInBounds ? day.isSelected : undefined, "data-is-focusable": day.isInBounds ? true : undefined, ref: isNavigatedDate ? 'navigatedDay' : undefined, key: isNavigatedDate ? 'navigatedDay' : undefined },
+                                    React.createElement("span", { "aria-hidden": 'true' }, dateTimeFormatter.formatDay(day.originalDate))));
+                            var _a, _b;
+                        }));
+                    }))))));
+        var _c, _d;
+    };
+    CalendarDay.prototype.focus = function () {
+        if (this.refs.navigatedDay) {
+            this.refs.navigatedDay.tabIndex = 0;
+            this.refs.navigatedDay.focus();
+        }
+    };
+    CalendarDay.prototype._findCornerIndexes = function (week) {
+        var cornerIndexes = [];
+        for (var i = 0, length_1 = week.length; i < length_1; i++) {
+            var day = week[i];
+            if (day.isInMonth) {
+                cornerIndexes.push(i);
+            }
+        }
+        if (cornerIndexes.length > 2) {
+            cornerIndexes.splice(1, cornerIndexes.length - 2);
+        }
+        return cornerIndexes;
+    };
+    CalendarDay.prototype._populateCornerStyles = function (weekCornersStyled, weekIndex, cornerIndexes, singleCornerStyle, leftCornerStyle, rightCornerStyle) {
+        var cornersLength = cornerIndexes.length;
+        if (cornersLength > 0) {
+            if (cornersLength === 1) {
+                weekCornersStyled[weekIndex + '_' + cornerIndexes[0]] = singleCornerStyle;
+            }
+            else if (cornersLength === 2) {
+                weekCornersStyled[weekIndex + '_' + cornerIndexes[0]] = leftCornerStyle;
+                weekCornersStyled[weekIndex + '_' + cornerIndexes[1]] = rightCornerStyle;
+            }
+            if (weekIndex === 0) {
+                // check if second week needs corner styles
+                if (cornerIndexes[0] !== 0) {
+                    weekCornersStyled['1_0'] = leftCornerStyle;
+                }
+            }
+            else {
+                // Assume we are on the last week. Check if second-to-last week needs corner styles
+                var lastDayIndex = DAYS_IN_WEEK - 1;
+                if (cornerIndexes[cornersLength - 1] !== lastDayIndex) {
+                    weekCornersStyled[(weekIndex - 1) + '_' + lastDayIndex] = rightCornerStyle;
+                }
+            }
+        }
+    };
+    CalendarDay.prototype._getWeekCornerStyles = function (weeks) {
+        var weekCornersStyled = {};
+        var numberOfWeeks = weeks.length;
+        var indexesFirstWeek = this._findCornerIndexes(weeks[0]);
+        var indexesLastWeek = this._findCornerIndexes(weeks[numberOfWeeks - 1]);
+        this._populateCornerStyles(weekCornersStyled, 0 /* week index */, indexesFirstWeek, 'ms-DatePicker-singleTopDate ' + styles.singleTopDate, 'ms-DatePicker-topLeftCornerDate ' + styles.topLeftCornerDate, 'ms-DatePicker-topRightCornerDate ' + styles.topRightCornerDate);
+        this._populateCornerStyles(weekCornersStyled, weeks.length - 1 /* week index */, indexesLastWeek, 'ms-DatePicker-singleBottomDate ' + styles.singleBottomDate, 'ms-DatePicker-bottomLeftCornerDate ' + styles.bottomLeftCornerDate, 'ms-DatePicker-bottomRightCornerDate ' + styles.bottomRightCornerDate);
+        return weekCornersStyled;
+    };
+    CalendarDay.prototype._getHighlightedCornerStyle = function (weekCorners, dayIndex, weekIndex) {
+        var cornerStyle = weekCorners[weekIndex + '_' + dayIndex] ? weekCorners[weekIndex + '_' + dayIndex] : '';
+        return cornerStyle;
+    };
+    CalendarDay.prototype._navigateMonthEdge = function (ev, date, weekIndex, dayIndex) {
+        var _a = this.props, minDate = _a.minDate, maxDate = _a.maxDate;
+        var targetDate = undefined;
+        if (weekIndex === 0 && ev.which === 38 /* up */) {
+            targetDate = DateMath_1.addWeeks(date, -1);
+        }
+        else if (weekIndex === (this.state.weeks.length - 1) && ev.which === 40 /* down */) {
+            targetDate = DateMath_1.addWeeks(date, 1);
+        }
+        else if (dayIndex === 0 && ev.which === Utilities_1.getRTLSafeKeyCode(37 /* left */)) {
+            targetDate = DateMath_1.addDays(date, -1);
+        }
+        else if (dayIndex === (DAYS_IN_WEEK - 1) && ev.which === Utilities_1.getRTLSafeKeyCode(39 /* right */)) {
+            targetDate = DateMath_1.addDays(date, 1);
+        }
+        // Don't navigate to out-of-bounds date
+        if (targetDate && (minDate ? DateMath_1.compareDatePart(minDate, targetDate) < 1 : true) && (maxDate ? DateMath_1.compareDatePart(targetDate, maxDate) < 1 : true)) {
+            this.props.onNavigateDate(targetDate, true);
+            ev.preventDefault();
+        }
+    };
+    CalendarDay.prototype._onKeyDown = function (callback, ev) {
+        if (ev.which === 13 /* enter */ || ev.which === 32 /* space */) {
+            callback();
+        }
+    };
+    CalendarDay.prototype._onDayKeyDown = function (originalDate, weekIndex, dayIndex) {
+        var _this = this;
+        return function (ev) {
+            _this._navigateMonthEdge(ev, originalDate, weekIndex, dayIndex);
+        };
+    };
+    CalendarDay.prototype._onSelectDate = function (selectedDate) {
+        var _a = this.props, onSelectDate = _a.onSelectDate, dateRangeType = _a.dateRangeType, firstDayOfWeek = _a.firstDayOfWeek, navigatedDate = _a.navigatedDate, autoNavigateOnSelection = _a.autoNavigateOnSelection, minDate = _a.minDate, maxDate = _a.maxDate;
+        var dateRange = DateMath_1.getDateRangeArray(selectedDate, dateRangeType, firstDayOfWeek);
+        if (dateRangeType !== DateValues_1.DateRangeType.Day) {
+            dateRange = this._getBoundedDateRange(dateRange, minDate, maxDate);
+        }
+        if (onSelectDate) {
+            onSelectDate(selectedDate, dateRange);
+        }
+        // Navigate to next or previous month if needed
+        if (autoNavigateOnSelection && selectedDate.getMonth() !== navigatedDate.getMonth()) {
+            var compareResult = DateMath_1.compareDatePart(selectedDate, navigatedDate);
+            if (compareResult < 0) {
+                this._onSelectPrevMonth();
+            }
+            else if (compareResult > 0) {
+                this._onSelectNextMonth();
+            }
+        }
+    };
+    CalendarDay.prototype._onSelectNextMonth = function () {
+        this.props.onNavigateDate(DateMath_1.addMonths(this.props.navigatedDate, 1), false);
+    };
+    CalendarDay.prototype._onSelectPrevMonth = function () {
+        this.props.onNavigateDate(DateMath_1.addMonths(this.props.navigatedDate, -1), false);
+    };
+    CalendarDay.prototype._onHeaderSelect = function () {
+        var onHeaderSelect = this.props.onHeaderSelect;
+        if (onHeaderSelect) {
+            onHeaderSelect(true);
+        }
+    };
+    CalendarDay.prototype._onHeaderKeyDown = function (ev) {
+        var onHeaderSelect = this.props.onHeaderSelect;
+        if (onHeaderSelect && (ev.which === 13 /* enter */ || ev.which === 32 /* space */)) {
+            onHeaderSelect(true);
+        }
+    };
+    CalendarDay.prototype._onPrevMonthKeyDown = function (ev) {
+        this._onKeyDown(this._onSelectPrevMonth, ev);
+    };
+    CalendarDay.prototype._onNextMonthKeyDown = function (ev) {
+        this._onKeyDown(this._onSelectNextMonth, ev);
+    };
+    CalendarDay.prototype._getWeeks = function (propsToUse) {
+        var navigatedDate = propsToUse.navigatedDate, selectedDate = propsToUse.selectedDate, dateRangeType = propsToUse.dateRangeType, firstDayOfWeek = propsToUse.firstDayOfWeek, today = propsToUse.today, minDate = propsToUse.minDate, maxDate = propsToUse.maxDate, showSixWeeksByDefault = propsToUse.showSixWeeksByDefault;
+        var date = new Date(navigatedDate.getFullYear(), navigatedDate.getMonth(), 1);
+        var todaysDate = today || new Date();
+        var weeks = [];
+        // Cycle the date backwards to get to the first day of the week.
+        while (date.getDay() !== firstDayOfWeek) {
+            date.setDate(date.getDate() - 1);
+        }
+        // a flag to indicate whether all days of the week are in the month
+        var isAllDaysOfWeekOutOfMonth = false;
+        var selectedDates = DateMath_1.getDateRangeArray(selectedDate, dateRangeType, firstDayOfWeek);
+        if (dateRangeType !== DateValues_1.DateRangeType.Day) {
+            selectedDates = this._getBoundedDateRange(selectedDates, minDate, maxDate);
+        }
+        var shouldGetWeeks = true;
+        for (var weekIndex = 0; shouldGetWeeks; weekIndex++) {
+            var week = [];
+            isAllDaysOfWeekOutOfMonth = true;
+            for (var dayIndex = 0; dayIndex < DAYS_IN_WEEK; dayIndex++) {
+                var originalDate = new Date(date.toString());
+                var dayInfo = {
+                    key: date.toString(),
+                    date: date.getDate().toString(),
+                    originalDate: originalDate,
+                    isInMonth: date.getMonth() === navigatedDate.getMonth(),
+                    isToday: DateMath_1.compareDates(todaysDate, date),
+                    isSelected: DateMath_1.isInDateRangeArray(date, selectedDates),
+                    onSelected: this._onSelectDate.bind(this, originalDate),
+                    isInBounds: (minDate ? DateMath_1.compareDatePart(minDate, date) < 1 : true) && (maxDate ? DateMath_1.compareDatePart(date, maxDate) < 1 : true)
+                };
+                week.push(dayInfo);
+                if (dayInfo.isInMonth) {
+                    isAllDaysOfWeekOutOfMonth = false;
+                }
+                date.setDate(date.getDate() + 1);
+            }
+            // We append the condition of the loop depending upon the showSixWeeksByDefault prop.
+            shouldGetWeeks = showSixWeeksByDefault ? (!isAllDaysOfWeekOutOfMonth || weekIndex <= 5) : !isAllDaysOfWeekOutOfMonth;
+            if (shouldGetWeeks) {
+                weeks.push(week);
+            }
+        }
+        return weeks;
+    };
+    CalendarDay.prototype._getBoundedDateRange = function (dateRange, minDate, maxDate) {
+        var boundedDateRange = dateRange.slice();
+        if (minDate) {
+            boundedDateRange = boundedDateRange.filter(function (date) { return DateMath_1.compareDatePart(date, minDate) >= 0; });
+        }
+        if (maxDate) {
+            boundedDateRange = boundedDateRange.filter(function (date) { return DateMath_1.compareDatePart(date, maxDate) <= 0; });
+        }
+        return boundedDateRange;
+    };
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], CalendarDay.prototype, "_onKeyDown", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], CalendarDay.prototype, "_onDayKeyDown", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], CalendarDay.prototype, "_onSelectDate", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], CalendarDay.prototype, "_onSelectNextMonth", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], CalendarDay.prototype, "_onSelectPrevMonth", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], CalendarDay.prototype, "_onHeaderSelect", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], CalendarDay.prototype, "_onHeaderKeyDown", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], CalendarDay.prototype, "_onPrevMonthKeyDown", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], CalendarDay.prototype, "_onNextMonthKeyDown", null);
+    return CalendarDay;
+}(Utilities_1.BaseComponent));
+exports.CalendarDay = CalendarDay;
+
+
+/***/ }),
+/* 235 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * Common constants and methods
+ */
+var TimeConstants = {
+    MillisecondsInOneDay: 86400000,
+    MillisecondsIn1Sec: 1000,
+    MillisecondsIn1Min: 60000,
+    MillisecondsIn30Mins: 1800000,
+    MillisecondsIn1Hour: 3600000,
+    MinutesInOneDay: 1440,
+    MinutesInOneHour: 60,
+    DaysInOneWeek: 7,
+    MonthInOneYear: 12
+};
+exports.default = TimeConstants;
+
+
+/***/ }),
+/* 236 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+var React = __webpack_require__(1);
+var Utilities_1 = __webpack_require__(2);
+var FocusZone_1 = __webpack_require__(21);
+var DateMath_1 = __webpack_require__(24);
+var Icon_1 = __webpack_require__(8);
+var stylesImport = __webpack_require__(36);
+var styles = stylesImport;
+var CalendarMonth = /** @class */ (function (_super) {
+    tslib_1.__extends(CalendarMonth, _super);
+    function CalendarMonth(props) {
+        var _this = _super.call(this, props) || this;
+        _this._selectMonthCallbacks = [];
+        props.strings.shortMonths.map(function (month, index) {
+            _this._selectMonthCallbacks[index] = _this._onSelectMonth.bind(_this, index);
+        });
+        _this._isCurrentMonth = _this._isCurrentMonth.bind(_this);
+        _this._onSelectNextYear = _this._onSelectNextYear.bind(_this);
+        _this._onSelectPrevYear = _this._onSelectPrevYear.bind(_this);
+        _this._onSelectMonth = _this._onSelectMonth.bind(_this);
+        return _this;
+    }
+    CalendarMonth.prototype.render = function () {
+        var _this = this;
+        var _a = this.props, navigatedDate = _a.navigatedDate, strings = _a.strings, today = _a.today, highlightCurrentMonth = _a.highlightCurrentMonth, navigationIcons = _a.navigationIcons, dateTimeFormatter = _a.dateTimeFormatter, minDate = _a.minDate, maxDate = _a.maxDate;
+        var leftNavigationIcon = navigationIcons.leftNavigation;
+        var rightNavigationIcon = navigationIcons.rightNavigation;
+        // determine if previous/next years are in bounds
+        var isPrevYearInBounds = minDate ? DateMath_1.compareDatePart(minDate, DateMath_1.getYearStart(navigatedDate)) < 0 : true;
+        var isNextYearInBounds = maxDate ? DateMath_1.compareDatePart(DateMath_1.getYearEnd(navigatedDate), maxDate) < 0 : true;
+        return (React.createElement("div", { className: Utilities_1.css('ms-DatePicker-monthPicker', styles.monthPicker) },
+            React.createElement("div", { className: Utilities_1.css('ms-DatePicker-yearComponents', styles.yearComponents) },
+                React.createElement("div", { className: Utilities_1.css('ms-DatePicker-navContainer', styles.navContainer) },
+                    React.createElement("span", { className: Utilities_1.css('ms-DatePicker-prevYear js-prevYear', styles.prevYear, (_b = {},
+                            _b['ms-DatePicker-prevYear--disabled ' + styles.prevYearIsDisabled] = !isPrevYearInBounds,
+                            _b)), onClick: this._onSelectPrevYear, onKeyDown: this._onSelectPrevYearKeyDown, "aria-label": strings.prevYearAriaLabel ? strings.prevYearAriaLabel + ' ' + dateTimeFormatter.formatYear(DateMath_1.addYears(navigatedDate, -1)) : undefined, role: 'button', tabIndex: 0 },
+                        React.createElement(Icon_1.Icon, { iconName: Utilities_1.getRTL() ? rightNavigationIcon : leftNavigationIcon })),
+                    React.createElement("span", { className: Utilities_1.css('ms-DatePicker-nextYear js-nextYear', styles.nextYear, (_c = {},
+                            _c['ms-DatePicker-nextYear--disabled ' + styles.nextYearIsDisabled] = !isNextYearInBounds,
+                            _c)), onClick: this._onSelectNextYear, onKeyDown: this._onSelectNextYearKeyDown, "aria-label": strings.nextYearAriaLabel ? strings.nextYearAriaLabel + ' ' + dateTimeFormatter.formatYear(DateMath_1.addYears(navigatedDate, 1)) : undefined, role: 'button', tabIndex: 0 },
+                        React.createElement(Icon_1.Icon, { iconName: Utilities_1.getRTL() ? leftNavigationIcon : rightNavigationIcon })))),
+            React.createElement("div", { className: Utilities_1.css('ms-DatePicker-header', styles.header) }, this.props.onHeaderSelect ?
+                React.createElement("div", { className: Utilities_1.css('ms-DatePicker-currentYear js-showYearPicker', styles.currentYear, styles.headerToggleView), onClick: this._onHeaderSelect, onKeyDown: this._onHeaderKeyDown, "aria-label": dateTimeFormatter.formatYear(navigatedDate), role: 'button', tabIndex: 0 }, dateTimeFormatter.formatYear(navigatedDate))
+                :
+                    React.createElement("div", { className: Utilities_1.css('ms-DatePicker-currentYear js-showYearPicker', styles.currentYear) }, dateTimeFormatter.formatYear(navigatedDate))),
+            React.createElement(FocusZone_1.FocusZone, null,
+                React.createElement("div", { className: Utilities_1.css('ms-DatePicker-optionGrid', styles.optionGrid), role: 'grid' }, strings.shortMonths.map(function (month, index) {
+                    var indexedMonth = DateMath_1.setMonth(navigatedDate, index);
+                    var isCurrentMonth = _this._isCurrentMonth(index, navigatedDate.getFullYear(), today);
+                    var isNavigatedMonth = navigatedDate.getMonth() === index;
+                    var isInBounds = (minDate ? DateMath_1.compareDatePart(minDate, DateMath_1.getMonthEnd(indexedMonth)) < 1 : true) &&
+                        (maxDate ? DateMath_1.compareDatePart(DateMath_1.getMonthStart(indexedMonth), maxDate) < 1 : true);
+                    return React.createElement("span", { role: 'gridcell', className: Utilities_1.css('ms-DatePicker-monthOption', styles.monthOption, (_a = {},
+                            _a['ms-DatePicker-day--today ' + styles.monthIsCurrentMonth] = highlightCurrentMonth && isCurrentMonth,
+                            _a['ms-DatePicker-day--highlighted ' + styles.monthIsHighlighted] = highlightCurrentMonth && isNavigatedMonth,
+                            _a['ms-DatePicker-monthOption--disabled ' + styles.monthOptionIsDisabled] = !isInBounds,
+                            _a)), key: index, onClick: isInBounds ? _this._selectMonthCallbacks[index] : undefined, "aria-label": dateTimeFormatter.formatMonthYear(indexedMonth, strings), "aria-selected": isCurrentMonth || isNavigatedMonth, "data-is-focusable": isInBounds ? true : undefined, ref: isNavigatedMonth ? 'navigatedMonth' : undefined }, month);
+                    var _a;
+                })))));
+        var _b, _c;
+    };
+    CalendarMonth.prototype.focus = function () {
+        if (this.refs.navigatedMonth) {
+            this.refs.navigatedMonth.tabIndex = 0;
+            this.refs.navigatedMonth.focus();
+        }
+    };
+    CalendarMonth.prototype._isCurrentMonth = function (month, year, today) {
+        return today.getFullYear() === year && today.getMonth() === month;
+    };
+    CalendarMonth.prototype._onKeyDown = function (callback, ev) {
+        if (ev.which === 13 /* enter */ || ev.which === 32 /* space */) {
+            callback();
+        }
+    };
+    CalendarMonth.prototype._onSelectNextYear = function () {
+        var _a = this.props, navigatedDate = _a.navigatedDate, onNavigateDate = _a.onNavigateDate;
+        onNavigateDate(DateMath_1.addYears(navigatedDate, 1), false);
+    };
+    CalendarMonth.prototype._onSelectNextYearKeyDown = function (ev) {
+        this._onKeyDown(this._onSelectNextYear, ev);
+    };
+    CalendarMonth.prototype._onSelectPrevYear = function () {
+        var _a = this.props, navigatedDate = _a.navigatedDate, onNavigateDate = _a.onNavigateDate;
+        onNavigateDate(DateMath_1.addYears(navigatedDate, -1), false);
+    };
+    CalendarMonth.prototype._onSelectPrevYearKeyDown = function (ev) {
+        this._onKeyDown(this._onSelectPrevYear, ev);
+    };
+    CalendarMonth.prototype._onSelectMonth = function (newMonth) {
+        var _a = this.props, navigatedDate = _a.navigatedDate, onNavigateDate = _a.onNavigateDate, onHeaderSelect = _a.onHeaderSelect;
+        // If header is clickable the calendars are overlayed, switch back to day picker when month is clicked
+        if (onHeaderSelect) {
+            onHeaderSelect(true);
+        }
+        onNavigateDate(DateMath_1.setMonth(navigatedDate, newMonth), true);
+    };
+    CalendarMonth.prototype._onHeaderSelect = function () {
+        var onHeaderSelect = this.props.onHeaderSelect;
+        if (onHeaderSelect) {
+            onHeaderSelect(true);
+        }
+    };
+    CalendarMonth.prototype._onHeaderKeyDown = function (ev) {
+        var onHeaderSelect = this.props.onHeaderSelect;
+        if (onHeaderSelect && (ev.which === 13 /* enter */ || ev.which === 32 /* space */)) {
+            onHeaderSelect(true);
+        }
+    };
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], CalendarMonth.prototype, "_onKeyDown", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], CalendarMonth.prototype, "_onSelectNextYear", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], CalendarMonth.prototype, "_onSelectNextYearKeyDown", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], CalendarMonth.prototype, "_onSelectPrevYear", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], CalendarMonth.prototype, "_onSelectPrevYearKeyDown", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], CalendarMonth.prototype, "_onSelectMonth", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], CalendarMonth.prototype, "_onHeaderSelect", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], CalendarMonth.prototype, "_onHeaderKeyDown", null);
+    return CalendarMonth;
+}(Utilities_1.BaseComponent));
+exports.CalendarMonth = CalendarMonth;
+
+
+/***/ }),
+/* 237 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+tslib_1.__exportStar(__webpack_require__(238), exports);
+
+
+/***/ }),
+/* 238 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+var React = __webpack_require__(1);
+var Label_1 = __webpack_require__(10);
+var Icon_1 = __webpack_require__(8);
+var Utilities_1 = __webpack_require__(2);
+var stylesImport = __webpack_require__(239);
+var styles = stylesImport;
+var Styling_1 = __webpack_require__(3);
+var TextField = /** @class */ (function (_super) {
+    tslib_1.__extends(TextField, _super);
+    function TextField(props) {
+        var _this = _super.call(this, props) || this;
+        _this._warnDeprecations({
+            'iconClass': 'iconProps',
+            'addonString': 'prefix',
+            'onRenderAddon': 'onRenderPrefix'
+        });
+        _this._warnMutuallyExclusive({
+            'value': 'defaultValue'
+        });
+        _this._id = Utilities_1.getId('TextField');
+        _this._descriptionId = Utilities_1.getId('TextFieldDescription');
+        _this.state = {
+            value: props.value || props.defaultValue || '',
+            isFocused: false,
+            errorMessage: ''
+        };
+        _this._onInputChange = _this._onInputChange.bind(_this);
+        _this._onFocus = _this._onFocus.bind(_this);
+        _this._onBlur = _this._onBlur.bind(_this);
+        _this._delayedValidate = _this._async.debounce(_this._validate, _this.props.deferredValidationTime);
+        _this._lastValidation = 0;
+        _this._isDescriptionAvailable = false;
+        return _this;
+    }
+    Object.defineProperty(TextField.prototype, "value", {
+        /**
+         * Gets the current value of the text field.
+         */
+        get: function () {
+            return this.state.value;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    TextField.prototype.componentDidMount = function () {
+        this._isMounted = true;
+        this._adjustInputHeight();
+        if (this.props.validateOnLoad) {
+            this._validate(this.state.value);
+        }
+    };
+    TextField.prototype.componentWillReceiveProps = function (newProps) {
+        var onBeforeChange = this.props.onBeforeChange;
+        if (newProps.value !== undefined && newProps.value !== this.state.value) {
+            if (onBeforeChange) {
+                onBeforeChange(newProps.value);
+            }
+            this._latestValue = newProps.value;
+            this.setState({
+                value: newProps.value,
+                errorMessage: ''
+            });
+            this._delayedValidate(newProps.value);
+        }
+    };
+    TextField.prototype.componentWillUnmount = function () {
+        this._isMounted = false;
+    };
+    TextField.prototype.render = function () {
+        var _a = this.props, className = _a.className, description = _a.description, disabled = _a.disabled, iconClass = _a.iconClass, iconProps = _a.iconProps, multiline = _a.multiline, required = _a.required, underlined = _a.underlined, borderless = _a.borderless, addonString = _a.addonString, // @deprecated
+        prefix = _a.prefix, suffix = _a.suffix, _b = _a.onRenderAddon, onRenderAddon = _b === void 0 ? this._onRenderAddon : _b, // @deprecated
+        _c = _a.onRenderPrefix, // @deprecated
+        onRenderPrefix = _c === void 0 ? this._onRenderPrefix : _c, _d = _a.onRenderSuffix, onRenderSuffix = _d === void 0 ? this._onRenderSuffix : _d, _e = _a.onRenderLabel, onRenderLabel = _e === void 0 ? this._onRenderLabel : _e;
+        var isFocused = this.state.isFocused;
+        var errorMessage = this._errorMessage;
+        this._isDescriptionAvailable = Boolean(description || errorMessage);
+        var renderProps = tslib_1.__assign({}, this.props, { componentId: this._id });
+        var textFieldClassName = Utilities_1.css('ms-TextField', styles.root, className, (_f = {},
+            _f['is-required ' + styles.rootIsRequiredLabel] = this.props.label && required,
+            _f['is-required ' + styles.rootIsRequiredPlaceholderOnly] = !this.props.label && required,
+            _f['is-disabled ' + styles.rootIsDisabled] = disabled,
+            _f['is-active ' + styles.rootIsActive] = isFocused,
+            _f['ms-TextField--multiline ' + styles.rootIsMultiline] = multiline,
+            _f['ms-TextField--underlined ' + styles.rootIsUnderlined] = underlined,
+            _f['ms-TextField--borderless ' + styles.rootIsBorderless] = borderless,
+            _f));
+        return (React.createElement("div", { className: textFieldClassName },
+            React.createElement("div", { className: Utilities_1.css('ms-TextField-wrapper', styles.wrapper, underlined ? errorMessage && styles.invalid : '') },
+                onRenderLabel(renderProps, this._onRenderLabel),
+                React.createElement("div", { className: Utilities_1.css('ms-TextField-fieldGroup', styles.fieldGroup, isFocused && styles.fieldGroupIsFocused, errorMessage && styles.invalid) },
+                    (addonString !== undefined || this.props.onRenderAddon) && (React.createElement("div", { className: Utilities_1.css('ms-TextField-prefix', styles.fieldPrefixSuffix) }, onRenderAddon(this.props, this._onRenderAddon))),
+                    (prefix !== undefined || this.props.onRenderPrefix) && (React.createElement("div", { className: Utilities_1.css('ms-TextField-prefix', styles.fieldPrefixSuffix) }, onRenderPrefix(this.props, this._onRenderPrefix))),
+                    multiline ? this._renderTextArea() : this._renderInput(),
+                    (iconClass || iconProps) && React.createElement(Icon_1.Icon, tslib_1.__assign({ className: Utilities_1.css(iconClass, styles.icon) }, iconProps)),
+                    (suffix !== undefined || this.props.onRenderSuffix) && (React.createElement("div", { className: Utilities_1.css('ms-TextField-suffix', styles.fieldPrefixSuffix) }, onRenderSuffix(this.props, this._onRenderSuffix))))),
+            this._isDescriptionAvailable &&
+                React.createElement("span", { id: this._descriptionId },
+                    description && React.createElement("span", { className: Utilities_1.css('ms-TextField-description', styles.description) }, description),
+                    errorMessage &&
+                        React.createElement("div", null,
+                            React.createElement(Utilities_1.DelayedRender, null,
+                                React.createElement("p", { className: Utilities_1.css('ms-TextField-errorMessage', Styling_1.AnimationClassNames.slideDownIn20, styles.errorMessage) },
+                                    React.createElement("span", { "aria-live": 'assertive', className: styles.errorText, "data-automation-id": 'error-message' }, errorMessage)))))));
+        var _f;
+    };
+    /**
+     * Sets focus on the text field
+     */
+    TextField.prototype.focus = function () {
+        if (this._textElement) {
+            this._textElement.focus();
+        }
+    };
+    /**
+     * Selects the text field
+     */
+    TextField.prototype.select = function () {
+        if (this._textElement) {
+            this._textElement.select();
+        }
+    };
+    /**
+     * Sets the selection start of the text field to a specified value
+     */
+    TextField.prototype.setSelectionStart = function (value) {
+        if (this._textElement) {
+            this._textElement.selectionStart = value;
+        }
+    };
+    /**
+     * Sets the selection end of the text field to a specified value
+     */
+    TextField.prototype.setSelectionEnd = function (value) {
+        if (this._textElement) {
+            this._textElement.selectionEnd = value;
+        }
+    };
+    Object.defineProperty(TextField.prototype, "selectionStart", {
+        /**
+         * Gets the selection start of the text field
+         */
+        get: function () {
+            return this._textElement ? this._textElement.selectionStart : -1;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(TextField.prototype, "selectionEnd", {
+        /**
+         * Gets the selection end of the text field
+         */
+        get: function () {
+            return this._textElement ? this._textElement.selectionEnd : -1;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * Sets the start and end positions of a selection in a text field.
+     * @param start Index of the start of the selection.
+     * @param end Index of the end of the selection.
+     */
+    TextField.prototype.setSelectionRange = function (start, end) {
+        if (this._textElement) {
+            this._textElement.setSelectionRange(start, end);
+        }
+    };
+    TextField.prototype._onFocus = function (ev) {
+        if (this.props.onFocus) {
+            this.props.onFocus(ev);
+        }
+        this.setState({ isFocused: true });
+        if (this.props.validateOnFocusIn) {
+            this._validate(this.state.value);
+        }
+    };
+    TextField.prototype._onBlur = function (ev) {
+        if (this.props.onBlur) {
+            this.props.onBlur(ev);
+        }
+        this.setState({ isFocused: false });
+        if (this.props.validateOnFocusOut) {
+            this._validate(this.state.value);
+        }
+    };
+    TextField.prototype._onRenderLabel = function (props) {
+        var label = props.label, componentId = props.componentId;
+        if (label) {
+            return (React.createElement(Label_1.Label, { htmlFor: componentId }, label));
+        }
+        return null;
+    };
+    // @deprecated
+    TextField.prototype._onRenderAddon = function (props) {
+        var addonString = props.addonString;
+        return (React.createElement("span", { style: { paddingBottom: '1px' } }, addonString));
+    };
+    TextField.prototype._onRenderPrefix = function (props) {
+        var prefix = props.prefix;
+        return (React.createElement("span", { style: { paddingBottom: '1px' } }, prefix));
+    };
+    TextField.prototype._onRenderSuffix = function (props) {
+        var suffix = props.suffix;
+        return (React.createElement("span", { style: { paddingBottom: '1px' } }, suffix));
+    };
+    TextField.prototype._getTextElementClassName = function () {
+        var textFieldClassName;
+        if (this.props.multiline && !this.props.resizable) {
+            textFieldClassName = Utilities_1.css('ms-TextField-field ms-TextField-field--unresizable', styles.field, styles.fieldIsUnresizable);
+        }
+        else {
+            textFieldClassName = Utilities_1.css('ms-TextField-field', styles.field);
+        }
+        return Utilities_1.css(textFieldClassName, this.props.inputClassName, (_a = {},
+            _a[styles.hasIcon] = !!this.props.iconClass,
+            _a));
+        var _a;
+    };
+    Object.defineProperty(TextField.prototype, "_errorMessage", {
+        get: function () {
+            var errorMessage = this.state.errorMessage;
+            if (!errorMessage) {
+                errorMessage = this.props.errorMessage;
+            }
+            return errorMessage;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    TextField.prototype._renderTextArea = function () {
+        var textAreaProps = Utilities_1.getNativeProps(this.props, Utilities_1.textAreaProperties, ['defaultValue']);
+        return (React.createElement("textarea", tslib_1.__assign({ id: this._id }, textAreaProps, { ref: this._resolveRef('_textElement'), value: this.state.value, onInput: this._onInputChange, onChange: this._onInputChange, className: this._getTextElementClassName(), "aria-describedby": this._isDescriptionAvailable ? this._descriptionId : null, "aria-invalid": !!this.state.errorMessage, "aria-label": this.props.ariaLabel, onFocus: this._onFocus, onBlur: this._onBlur })));
+    };
+    TextField.prototype._renderInput = function () {
+        var inputProps = Utilities_1.getNativeProps(this.props, Utilities_1.inputProperties, ['defaultValue']);
+        return (React.createElement("input", tslib_1.__assign({ type: 'text', id: this._id }, inputProps, { ref: this._resolveRef('_textElement'), value: this.state.value, onInput: this._onInputChange, onChange: this._onInputChange, className: this._getTextElementClassName(), "aria-label": this.props.ariaLabel, "aria-describedby": this._isDescriptionAvailable ? this._descriptionId : null, "aria-invalid": !!this.state.errorMessage, onFocus: this._onFocus, onBlur: this._onBlur })));
+    };
+    TextField.prototype._onInputChange = function (event) {
+        var _this = this;
+        var element = event.target;
+        var value = element.value;
+        // Avoid doing unnecessary work when the value has not changed.
+        if (value === this._latestValue) {
+            return;
+        }
+        this._latestValue = value;
+        this.setState({
+            value: value,
+            errorMessage: ''
+        }, function () {
+            _this._adjustInputHeight();
+            if (_this.props.onChanged) {
+                _this.props.onChanged(value);
+            }
+        });
+        var _a = this.props, validateOnFocusIn = _a.validateOnFocusIn, validateOnFocusOut = _a.validateOnFocusOut;
+        if (!(validateOnFocusIn || validateOnFocusOut)) {
+            this._delayedValidate(value);
+        }
+        var onBeforeChange = this.props.onBeforeChange;
+        onBeforeChange(value);
+    };
+    TextField.prototype._validate = function (value) {
+        var _this = this;
+        // In case of _validate called multi-times during executing validate logic with promise return.
+        if (this._latestValidateValue === value) {
+            return;
+        }
+        this._latestValidateValue = value;
+        var onGetErrorMessage = this.props.onGetErrorMessage;
+        var result = onGetErrorMessage(value || '');
+        if (result !== undefined) {
+            if (typeof result === 'string') {
+                this.setState({
+                    errorMessage: result
+                });
+                this._notifyAfterValidate(value, result);
+            }
+            else {
+                var currentValidation_1 = ++this._lastValidation;
+                result.then(function (errorMessage) {
+                    if (_this._isMounted && currentValidation_1 === _this._lastValidation) {
+                        _this.setState({ errorMessage: errorMessage });
+                    }
+                    _this._notifyAfterValidate(value, errorMessage);
+                });
+            }
+        }
+        else {
+            this._notifyAfterValidate(value, '');
+        }
+    };
+    TextField.prototype._notifyAfterValidate = function (value, errorMessage) {
+        if (this._isMounted &&
+            value === this.state.value &&
+            this.props.onNotifyValidationResult) {
+            this.props.onNotifyValidationResult(errorMessage, value);
+        }
+    };
+    TextField.prototype._adjustInputHeight = function () {
+        if (this._textElement && this.props.autoAdjustHeight && this.props.multiline) {
+            var textField = this._textElement;
+            textField.style.height = '';
+            var scrollHeight = textField.scrollHeight + 2; // +2 to avoid vertical scroll bars
+            textField.style.height = scrollHeight + 'px';
+        }
+    };
+    TextField.defaultProps = {
+        multiline: false,
+        resizable: true,
+        autoAdjustHeight: false,
+        underlined: false,
+        borderless: false,
+        onChanged: function () { },
+        onBeforeChange: function () { },
+        onNotifyValidationResult: function () { },
+        onGetErrorMessage: function () { return undefined; },
+        deferredValidationTime: 200,
+        errorMessage: '',
+        validateOnFocusIn: false,
+        validateOnFocusOut: false,
+        validateOnLoad: true,
+    };
+    return TextField;
+}(Utilities_1.BaseComponent));
+exports.TextField = TextField;
+
+
+/***/ }),
+/* 239 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+/* tslint:disable */
+var load_themed_styles_1 = __webpack_require__(7);
+load_themed_styles_1.loadStyles([{ "rawString": ".root_15be1d0e{-webkit-box-sizing:border-box;box-sizing:border-box;-webkit-box-shadow:none;box-shadow:none;margin:0;padding:0;position:relative}.screenReaderOnly_15be1d0e{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0, 0, 0, 0);border:0}.fieldGroup_15be1d0e{-webkit-box-sizing:border-box;box-sizing:border-box;-webkit-box-shadow:none;box-shadow:none;margin:0;padding:0;border:1px solid " }, { "theme": "inputBorder", "defaultValue": "#a6a6a6" }, { "rawString": ";background:" }, { "theme": "bodyBackground", "defaultValue": "#ffffff" }, { "rawString": ";height:32px;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-ms-flex-direction:row;flex-direction:row;-webkit-box-align:stretch;-ms-flex-align:stretch;align-items:stretch;position:relative}.fieldGroup_15be1d0e:hover{border-color:" }, { "theme": "inputBorderHovered", "defaultValue": "#212121" }, { "rawString": "}.fieldGroup_15be1d0e.fieldGroupIsFocused_15be1d0e{border-color:" }, { "theme": "inputFocusBorderAlt", "defaultValue": "#0078d7" }, { "rawString": "}.rootIsDisabled_15be1d0e .fieldGroup_15be1d0e{background-color:" }, { "theme": "disabledBackground", "defaultValue": "#f4f4f4" }, { "rawString": ";border-color:" }, { "theme": "disabledBackground", "defaultValue": "#f4f4f4" }, { "rawString": ";pointer-events:none;cursor:default}@media screen and (-ms-high-contrast: active){.fieldGroup_15be1d0e:hover,.fieldGroup_15be1d0e.fieldGroupIsFocused_15be1d0e{border-color:Highlight}}.fieldGroup_15be1d0e::-ms-clear{display:none}.root_15be1d0e.rootIsDisabled_15be1d0e .field{background-color:" }, { "theme": "disabledBackground", "defaultValue": "#f4f4f4" }, { "rawString": ";border-color:" }, { "theme": "disabledBackground", "defaultValue": "#f4f4f4" }, { "rawString": ";pointer-events:none;cursor:default}.fieldPrefixSuffix_15be1d0e{background:" }, { "theme": "neutralLighter", "defaultValue": "#f4f4f4" }, { "rawString": ";color:" }, { "theme": "neutralSecondary", "defaultValue": "#666666" }, { "rawString": ";display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;padding:0 10px;line-height:1}.field_15be1d0e{-webkit-box-sizing:border-box;box-sizing:border-box;-webkit-box-shadow:none;box-shadow:none;margin:0;padding:0;font-size:14px;border-radius:0;border:none;background:none;color:" }, { "theme": "bodyText", "defaultValue": "#333333" }, { "rawString": ";padding:0 12px 0 12px;width:100%;text-overflow:ellipsis;outline:0}[dir='rtl'] .field_15be1d0e{padding:0 12px 0 12px}.field_15be1d0e:active,.field_15be1d0e:focus,.field_15be1d0e:hover{outline:0}[dir='ltr'] .field_15be1d0e.hasIcon_15be1d0e{padding-right:24px}[dir='rtl'] .field_15be1d0e.hasIcon_15be1d0e{padding-left:24px}.field_15be1d0e[disabled]{background-color:transparent;border-color:transparent;pointer-events:none;cursor:default}.field_15be1d0e .field_15be1d0e::-webkit-input-placeholder{color:" }, { "theme": "disabledText", "defaultValue": "#a6a6a6" }, { "rawString": "}.field_15be1d0e .field_15be1d0e:-ms-input-placeholder{color:" }, { "theme": "disabledText", "defaultValue": "#a6a6a6" }, { "rawString": "}.field_15be1d0e .field_15be1d0e::-ms-input-placeholder{color:" }, { "theme": "disabledText", "defaultValue": "#a6a6a6" }, { "rawString": "}.field .field::-webkit-input-placeholder{color:" }, { "theme": "disabledText", "defaultValue": "#a6a6a6" }, { "rawString": "}.field .field:-ms-input-placeholder{color:" }, { "theme": "disabledText", "defaultValue": "#a6a6a6" }, { "rawString": "}.field .field::-ms-input-placeholder{color:" }, { "theme": "disabledText", "defaultValue": "#a6a6a6" }, { "rawString": "}.field_15be1d0e .field_15be1d0e::placeholder{color:" }, { "theme": "disabledText", "defaultValue": "#a6a6a6" }, { "rawString": "}.root_15be1d0e.rootIsRequiredLabel_15be1d0e .ms-Label::after{content:' *';color:" }, { "theme": "error", "defaultValue": "#a80000" }, { "rawString": "}.root_15be1d0e.rootIsRequiredPlaceholderOnly_15be1d0e .ms-TextField-fieldGroup::after{content:'*';color:" }, { "theme": "error", "defaultValue": "#a80000" }, { "rawString": ";position:absolute;top:-5px}[dir='ltr'] .root_15be1d0e.rootIsRequiredPlaceholderOnly_15be1d0e .ms-TextField-fieldGroup::after{right:-10px}[dir='rtl'] .root_15be1d0e.rootIsRequiredPlaceholderOnly_15be1d0e .ms-TextField-fieldGroup::after{left:-10px}.root_15be1d0e.rootIsActive_15be1d0e{border-color:" }, { "theme": "inputFocusBorderAlt", "defaultValue": "#0078d7" }, { "rawString": "}.icon_15be1d0e{pointer-events:none;position:absolute;bottom:5px;top:auto;font-size:16px;line-height:18px}html[dir='ltr'] .icon_15be1d0e{right:8px}html[dir='rtl'] .icon_15be1d0e{left:8px}.description_15be1d0e{color:" }, { "theme": "bodySubtext", "defaultValue": "#666666" }, { "rawString": ";font-size:11px}.rootIsBorderless_15be1d0e .fieldGroup_15be1d0e{border-color:transparent;border-width:0}.root_15be1d0e.rootIsUnderlined_15be1d0e{border-width:0px}.root_15be1d0e.rootIsUnderlined_15be1d0e:hover:not(.rootIsDisabled_15be1d0e){border-color:" }, { "theme": "inputBorderHovered", "defaultValue": "#212121" }, { "rawString": "}@media screen and (-ms-high-contrast: active){.root_15be1d0e.rootIsUnderlined_15be1d0e:hover:not(.rootIsDisabled_15be1d0e){border-color:Highlight}}.root_15be1d0e.rootIsUnderlined_15be1d0e .wrapper_15be1d0e{display:-webkit-box;display:-ms-flexbox;display:flex;border-bottom:1px solid " }, { "theme": "inputBorder", "defaultValue": "#a6a6a6" }, { "rawString": ";width:100%}.root_15be1d0e.rootIsUnderlined_15be1d0e .wrapper_15be1d0e.invalid_15be1d0e,.root_15be1d0e.rootIsUnderlined_15be1d0e .wrapper_15be1d0e.invalid_15be1d0e:focus,.root_15be1d0e.rootIsUnderlined_15be1d0e .wrapper_15be1d0e.invalid_15be1d0e:hover{border-bottom:1px solid " }, { "theme": "errorText", "defaultValue": "#a80000" }, { "rawString": "}.root_15be1d0e.rootIsUnderlined_15be1d0e .ms-Label{font-size:14px;line-height:22px;height:32px}[dir='ltr'] .root_15be1d0e.rootIsUnderlined_15be1d0e .ms-Label{margin-right:8px}[dir='rtl'] .root_15be1d0e.rootIsUnderlined_15be1d0e .ms-Label{margin-left:8px}[dir='ltr'] .root_15be1d0e.rootIsUnderlined_15be1d0e .ms-Label{padding-left:12px}[dir='rtl'] .root_15be1d0e.rootIsUnderlined_15be1d0e .ms-Label{padding-right:12px}.root_15be1d0e.rootIsUnderlined_15be1d0e .fieldGroup_15be1d0e{-webkit-box-flex:1;-ms-flex:1 1 0px;flex:1 1 0px;border-width:0}[dir='ltr'] .root_15be1d0e.rootIsUnderlined_15be1d0e .fieldGroup_15be1d0e{text-align:left}[dir='rtl'] .root_15be1d0e.rootIsUnderlined_15be1d0e .fieldGroup_15be1d0e{text-align:right}.root_15be1d0e.rootIsUnderlined_15be1d0e.rootIsDisabled_15be1d0e{border-bottom-color:" }, { "theme": "disabledBackground", "defaultValue": "#f4f4f4" }, { "rawString": "}.root_15be1d0e.rootIsUnderlined_15be1d0e.rootIsDisabled_15be1d0e .ms-Label{color:" }, { "theme": "neutralTertiary", "defaultValue": "#a6a6a6" }, { "rawString": "}.root_15be1d0e.rootIsUnderlined_15be1d0e.rootIsDisabled_15be1d0e .field_15be1d0e{background-color:transparent;color:" }, { "theme": "disabledText", "defaultValue": "#a6a6a6" }, { "rawString": "}.root_15be1d0e.rootIsUnderlined_15be1d0e.rootIsDisabled_15be1d0e .fieldGroup_15be1d0e{background-color:transparent}.root_15be1d0e.rootIsUnderlined_15be1d0e.rootIsActive_15be1d0e{border-color:" }, { "theme": "inputFocusBorderAlt", "defaultValue": "#0078d7" }, { "rawString": "}@media screen and (-ms-high-contrast: active){.root_15be1d0e.rootIsUnderlined_15be1d0e.rootIsActive_15be1d0e{border-color:Highlight}}.root_15be1d0e.rootIsMultiline_15be1d0e .fieldGroup_15be1d0e{min-height:60px;height:auto;display:-webkit-box;display:-ms-flexbox;display:flex}.root_15be1d0e.rootIsMultiline_15be1d0e .field_15be1d0e{line-height:17px;-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;padding-top:6px;overflow:auto;width:100%}[dir='ltr'] .root_15be1d0e.rootIsMultiline_15be1d0e .field_15be1d0e.hasIcon_15be1d0e{padding-right:40px}[dir='rtl'] .root_15be1d0e.rootIsMultiline_15be1d0e .field_15be1d0e.hasIcon_15be1d0e{padding-left:40px}.errorMessage_15be1d0e{font-size:12px;font-weight:400;color:" }, { "theme": "errorText", "defaultValue": "#a80000" }, { "rawString": ";margin:0;padding-top:5px;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center}.invalid_15be1d0e,.invalid_15be1d0e:focus,.invalid_15be1d0e:hover{border-color:" }, { "theme": "errorText", "defaultValue": "#a80000" }, { "rawString": "}[dir='ltr'] .root_15be1d0e.rootIsUnderlined_15be1d0e .ms-Label{padding-left:12px}[dir='rtl'] .root_15be1d0e.rootIsUnderlined_15be1d0e .ms-Label{padding-right:12px}[dir='ltr'] .root_15be1d0e.rootIsUnderlined_15be1d0e .ms-Label{padding-right:0}[dir='rtl'] .root_15be1d0e.rootIsUnderlined_15be1d0e .ms-Label{padding-left:0}html[dir='ltr'] .root_15be1d0e.rootIsUnderlined_15be1d0e .field_15be1d0e{text-align:left}html[dir='rtl'] .root_15be1d0e.rootIsUnderlined_15be1d0e .field_15be1d0e{text-align:right}.root_15be1d0e.rootIsMultiline_15be1d0e .icon_15be1d0e{padding-bottom:8px;-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}[dir='ltr'] .root_15be1d0e.rootIsMultiline_15be1d0e .icon_15be1d0e{padding-right:24px}[dir='rtl'] .root_15be1d0e.rootIsMultiline_15be1d0e .icon_15be1d0e{padding-left:24px}.root_15be1d0e.rootIsMultiline_15be1d0e .field_15be1d0e.fieldIsUnresizable_15be1d0e{resize:none}.hidden_15be1d0e{display:none}\n" }]);
+exports.root = "root_15be1d0e";
+exports.screenReaderOnly = "screenReaderOnly_15be1d0e";
+exports.fieldGroup = "fieldGroup_15be1d0e";
+exports.fieldGroupIsFocused = "fieldGroupIsFocused_15be1d0e";
+exports.rootIsDisabled = "rootIsDisabled_15be1d0e";
+exports.fieldPrefixSuffix = "fieldPrefixSuffix_15be1d0e";
+exports.field = "field_15be1d0e";
+exports.hasIcon = "hasIcon_15be1d0e";
+exports.rootIsRequiredLabel = "rootIsRequiredLabel_15be1d0e";
+exports.rootIsRequiredPlaceholderOnly = "rootIsRequiredPlaceholderOnly_15be1d0e";
+exports.rootIsActive = "rootIsActive_15be1d0e";
+exports.icon = "icon_15be1d0e";
+exports.description = "description_15be1d0e";
+exports.rootIsBorderless = "rootIsBorderless_15be1d0e";
+exports.rootIsUnderlined = "rootIsUnderlined_15be1d0e";
+exports.wrapper = "wrapper_15be1d0e";
+exports.invalid = "invalid_15be1d0e";
+exports.rootIsMultiline = "rootIsMultiline_15be1d0e";
+exports.errorMessage = "errorMessage_15be1d0e";
+exports.fieldIsUnresizable = "fieldIsUnresizable_15be1d0e";
+exports.hidden = "hidden_15be1d0e";
+
+
+/***/ }),
+/* 240 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+/* tslint:disable */
+var load_themed_styles_1 = __webpack_require__(7);
+load_themed_styles_1.loadStyles([{ "rawString": ".root_fcde76fe{-webkit-box-sizing:border-box;box-sizing:border-box;-webkit-box-shadow:none;box-shadow:none;margin:0;padding:0}.textField_fcde76fe{position:relative}.textField_fcde76fe input::-ms-clear{display:none}.textField_fcde76fe input[readonly]{cursor:pointer}.eventWithLabel_fcde76fe{color:" }, { "theme": "neutralSecondary", "defaultValue": "#666666" }, { "rawString": ";font-size:16px;line-height:18px;pointer-events:none;position:absolute;pointer-events:initial;cursor:pointer;bottom:5px}[dir='ltr'] .eventWithLabel_fcde76fe{right:9px}[dir='rtl'] .eventWithLabel_fcde76fe{left:9px}.eventWithoutLabel_fcde76fe{color:" }, { "theme": "neutralSecondary", "defaultValue": "#666666" }, { "rawString": ";font-size:16px;line-height:18px;pointer-events:none;position:absolute;top:7px}[dir='ltr'] .eventWithoutLabel_fcde76fe{right:9px}[dir='rtl'] .eventWithoutLabel_fcde76fe{left:9px}\n" }]);
+exports.root = "root_fcde76fe";
+exports.textField = "textField_fcde76fe";
+exports.eventWithLabel = "eventWithLabel_fcde76fe";
+exports.eventWithoutLabel = "eventWithoutLabel_fcde76fe";
+
+
+/***/ }),
+/* 241 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(242);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {"hmr":true}
+options.transform = transform
+// add the styles to the DOM
+var update = __webpack_require__(6)(content, options);
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/cjs.js!./DateFilter.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/cjs.js!./DateFilter.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 242 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(5)(undefined);
+// imports
+
+
+// module
+exports.push([module.i, ".DateFilter {\n  display: flex;\n  flex-direction: column;\n  justify-content: space-between;\n  align-content: flex-start;\n}\n.DateFilter-StartDateLabel {\n  flex: none;\n}\n.DateFilter-StartDatePicker {\n  flex: none;\n}\n.DateFilter-EndDateLabel {\n  flex: none;\n}\n.DateFilter-EndDatePicker {\n  flex: none;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 243 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var React = __webpack_require__(1);
+var TextField_1 = __webpack_require__(71);
+__webpack_require__(244);
+var LimitFilter = /** @class */ (function (_super) {
+    __extends(LimitFilter, _super);
+    function LimitFilter() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    LimitFilter.prototype.render = function () {
+        return React.createElement(TextField_1.TextField, { className: "LimitFilter", label: "Type in Limit of last Search Strings:" });
+    };
+    return LimitFilter;
+}(React.Component));
+exports.LimitFilter = LimitFilter;
+
+
+/***/ }),
+/* 244 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(245);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {"hmr":true}
+options.transform = transform
+// add the styles to the DOM
+var update = __webpack_require__(6)(content, options);
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/cjs.js!./LimitFilter.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/cjs.js!./LimitFilter.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 245 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(5)(undefined);
+// imports
+
+
+// module
+exports.push([module.i, "", ""]);
+
+// exports
+
+
+/***/ }),
+/* 246 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var React = __webpack_require__(1);
+var Icon_1 = __webpack_require__(8);
+var Label_1 = __webpack_require__(10);
+__webpack_require__(247);
+var GoToSearchButton = /** @class */ (function (_super) {
+    __extends(GoToSearchButton, _super);
+    function GoToSearchButton() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    GoToSearchButton.prototype.render = function () {
+        return React.createElement("div", { className: "GoToSearchButton" },
+            React.createElement(Icon_1.Icon, { className: "GoToSearchButton-Icon", iconName: "DrillThrough" }),
+            React.createElement(Label_1.Label, { className: "GoToSearchButton-Label" }, "Go to search..."));
+    };
+    return GoToSearchButton;
+}(React.Component));
+exports.GoToSearchButton = GoToSearchButton;
+
+
+/***/ }),
+/* 247 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(248);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {"hmr":true}
+options.transform = transform
+// add the styles to the DOM
+var update = __webpack_require__(6)(content, options);
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/cjs.js!./GoToSearchButton.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/cjs.js!./GoToSearchButton.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 248 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(5)(undefined);
+// imports
+
+
+// module
+exports.push([module.i, ".GoToSearchButton {\n  display: inline-flex;\n  flex-direction: row;\n  justify-content: space-around;\n  align-content: flex-start;\n}\n.GoToSearchButton-Icon {\n  flex: none;\n  font-size: 60px;\n  font-weight: bold;\n  margin: 5px;\n}\n.GoToSearchButton-Label {\n  flex: none;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 249 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(250);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {"hmr":true}
+options.transform = transform
+// add the styles to the DOM
+var update = __webpack_require__(6)(content, options);
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/dist/cjs.js!./SearchHistoryPage.less", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/dist/cjs.js!./SearchHistoryPage.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 250 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(5)(undefined);
+// imports
+
+
+// module
+exports.push([module.i, ".SearchHistoryPage {\n  display: flex;\n  flex-direction: row;\n  justify-content: center;\n  align-content: center;\n}\n.SearchHistoryPage-RightContainer {\n  flex: none;\n}\n.SearchHistoryPage-LeftContainer {\n  flex: none;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 251 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var React = __webpack_require__(1);
+var MovieCard_1 = __webpack_require__(35);
 var SearchResultPage = /** @class */ (function (_super) {
     __extends(SearchResultPage, _super);
     function SearchResultPage() {
@@ -15315,26 +18582,26 @@ exports.SearchResultPage = SearchResultPage;
 
 
 /***/ }),
-/* 214 */
+/* 252 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var fabric_icons_1 = __webpack_require__(215);
-var fabric_icons_0_1 = __webpack_require__(216);
-var fabric_icons_1_1 = __webpack_require__(217);
-var fabric_icons_2_1 = __webpack_require__(218);
-var fabric_icons_3_1 = __webpack_require__(219);
-var fabric_icons_4_1 = __webpack_require__(220);
-var fabric_icons_5_1 = __webpack_require__(221);
-var fabric_icons_6_1 = __webpack_require__(222);
-var fabric_icons_7_1 = __webpack_require__(223);
-var fabric_icons_8_1 = __webpack_require__(224);
-var fabric_icons_9_1 = __webpack_require__(225);
-var fabric_icons_10_1 = __webpack_require__(226);
-var fabric_icons_11_1 = __webpack_require__(227);
-__webpack_require__(228);
+var fabric_icons_1 = __webpack_require__(253);
+var fabric_icons_0_1 = __webpack_require__(254);
+var fabric_icons_1_1 = __webpack_require__(255);
+var fabric_icons_2_1 = __webpack_require__(256);
+var fabric_icons_3_1 = __webpack_require__(257);
+var fabric_icons_4_1 = __webpack_require__(258);
+var fabric_icons_5_1 = __webpack_require__(259);
+var fabric_icons_6_1 = __webpack_require__(260);
+var fabric_icons_7_1 = __webpack_require__(261);
+var fabric_icons_8_1 = __webpack_require__(262);
+var fabric_icons_9_1 = __webpack_require__(263);
+var fabric_icons_10_1 = __webpack_require__(264);
+var fabric_icons_11_1 = __webpack_require__(265);
+__webpack_require__(266);
 var DEFAULT_BASE_URL = 'https://spoprod-a.akamaihd.net/files/fabric/assets/icons/';
 function initializeIcons(baseUrl, options) {
     if (baseUrl === void 0) { baseUrl = DEFAULT_BASE_URL; }
@@ -15344,7 +18611,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 215 */
+/* 253 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15429,7 +18696,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 216 */
+/* 254 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15560,7 +18827,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 217 */
+/* 255 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15691,7 +18958,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 218 */
+/* 256 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15822,7 +19089,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 219 */
+/* 257 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15953,7 +19220,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 220 */
+/* 258 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16080,7 +19347,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 221 */
+/* 259 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16210,7 +19477,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 222 */
+/* 260 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16339,7 +19606,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 223 */
+/* 261 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16470,7 +19737,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 224 */
+/* 262 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16601,7 +19868,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 225 */
+/* 263 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16732,7 +19999,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 226 */
+/* 264 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16859,7 +20126,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 227 */
+/* 265 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16974,7 +20241,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 228 */
+/* 266 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16985,13 +20252,13 @@ index_1.registerIconAlias('trash', 'delete');
 
 
 /***/ }),
-/* 229 */
+/* 267 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(230);
+var content = __webpack_require__(268);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -16999,7 +20266,7 @@ var transform;
 var options = {"hmr":true}
 options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(8)(content, options);
+var update = __webpack_require__(6)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -17016,10 +20283,10 @@ if(false) {
 }
 
 /***/ }),
-/* 230 */
+/* 268 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(7)(undefined);
+exports = module.exports = __webpack_require__(5)(undefined);
 // imports
 
 

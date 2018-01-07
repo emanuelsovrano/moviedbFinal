@@ -1,7 +1,7 @@
 import * as React from "react";
 import { MovieCard } from "../components/movieCard/MovieCard";
 import './FavoritesPage.less';
-//FavoritesPage.less
+import { RevertRemovalButton } from "../components/revertRemovalButton/RevertRemovalButton";
 
 export class FavoritesPage extends React.Component<{}, {}> {
 
@@ -10,7 +10,7 @@ export class FavoritesPage extends React.Component<{}, {}> {
 
         //Dummy Result
         const cards: JSX.Element[] = [];
-        for(let i = 0; i < 50; i++) {
+        for(let i = 0; i < 10; i++) {
             cards.push(<MovieCard key={'MovieCard-' + i} />);
         }
         return cards;
@@ -18,9 +18,10 @@ export class FavoritesPage extends React.Component<{}, {}> {
 
     public render(): JSX.Element {
         return <div className="FavoritesPage">
-            <div className="TopContainer" >
+            <div className="FavoritesPage-TopContainer" >
                 {this.getFavorits()}</div>
-            <div className="BottomContainer" >
+            <div className="FavoritesPage-BottomContainer" >
+                <RevertRemovalButton isEnabled={true} />
             </div>
         </div>;
     }
