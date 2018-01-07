@@ -293,7 +293,7 @@ var tslib_1 = __webpack_require__(0);
 tslib_1.__exportStar(__webpack_require__(112), exports);
 tslib_1.__exportStar(__webpack_require__(18), exports);
 tslib_1.__exportStar(__webpack_require__(27), exports);
-tslib_1.__exportStar(__webpack_require__(44), exports);
+tslib_1.__exportStar(__webpack_require__(46), exports);
 
 
 /***/ }),
@@ -660,991 +660,19 @@ var mergeStyles_1 = __webpack_require__(86);
 exports.mergeStyles = mergeStyles_1.mergeStyles;
 var mergeStyleSets_1 = __webpack_require__(92);
 exports.mergeStyleSets = mergeStyleSets_1.mergeStyleSets;
-var concatStyleSets_1 = __webpack_require__(38);
+var concatStyleSets_1 = __webpack_require__(40);
 exports.concatStyleSets = concatStyleSets_1.concatStyleSets;
 var fontFace_1 = __webpack_require__(93);
 exports.fontFace = fontFace_1.fontFace;
 var keyframes_1 = __webpack_require__(94);
 exports.keyframes = keyframes_1.keyframes;
-var Stylesheet_1 = __webpack_require__(11);
+var Stylesheet_1 = __webpack_require__(13);
 exports.InjectionMode = Stylesheet_1.InjectionMode;
 exports.Stylesheet = Stylesheet_1.Stylesheet;
 
 
 /***/ }),
 /* 7 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var Utilities_1 = __webpack_require__(1);
-var Icon_1 = __webpack_require__(12);
-var ContextualMenu_1 = __webpack_require__(126);
-var BaseButton_classNames_1 = __webpack_require__(156);
-var SplitButton_classNames_1 = __webpack_require__(157);
-var BaseButton = /** @class */ (function (_super) {
-    tslib_1.__extends(BaseButton, _super);
-    function BaseButton(props, rootClassName) {
-        var _this = _super.call(this, props) || this;
-        _this._warnConditionallyRequiredProps(['menuProps', 'onClick'], 'split', _this.props.split);
-        _this._warnDeprecations({
-            rootProps: undefined
-        });
-        _this._labelId = Utilities_1.getId();
-        _this._descriptionId = Utilities_1.getId();
-        _this._ariaDescriptionId = Utilities_1.getId();
-        _this.state = {
-            menuProps: null
-        };
-        return _this;
-    }
-    Object.defineProperty(BaseButton.prototype, "_isSplitButton", {
-        get: function () {
-            return (!!this.props.menuProps && !!this.props.onClick) && this.props.split === true;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(BaseButton.prototype, "_isExpanded", {
-        get: function () {
-            return !!this.state.menuProps;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    BaseButton.prototype.render = function () {
-        var _a = this.props, ariaDescription = _a.ariaDescription, ariaLabel = _a.ariaLabel, ariaHidden = _a.ariaHidden, className = _a.className, description = _a.description, disabled = _a.disabled, primaryDisabled = _a.primaryDisabled, href = _a.href, iconProps = _a.iconProps, menuIconProps = _a.menuIconProps, styles = _a.styles, text = _a.text, checked = _a.checked, variantClassName = _a.variantClassName, theme = _a.theme, getClassNames = _a.getClassNames;
-        var menuProps = this.state.menuProps;
-        // Button is disabled if the whole button (in case of splitbutton is disabled) or if the primary action is disabled
-        var isPrimaryButtonDisabled = (disabled || primaryDisabled);
-        this._classNames = getClassNames ? getClassNames(theme, className, variantClassName, iconProps && iconProps.className, menuIconProps && menuIconProps.className, isPrimaryButtonDisabled, checked, !!this.state.menuProps, this.props.split) : BaseButton_classNames_1.getBaseButtonClassNames(styles, className, variantClassName, iconProps && iconProps.className, menuIconProps && menuIconProps.className, isPrimaryButtonDisabled, checked, !!this.state.menuProps, this.props.split);
-        var _b = this, _ariaDescriptionId = _b._ariaDescriptionId, _labelId = _b._labelId, _descriptionId = _b._descriptionId;
-        // Anchor tag cannot be disabled hence in disabled state rendering
-        // anchor button as normal button
-        var renderAsAnchor = !isPrimaryButtonDisabled && !!href;
-        var tag = renderAsAnchor ? 'a' : 'button';
-        var nativeProps = Utilities_1.getNativeProps(Utilities_1.assign(renderAsAnchor ? {} : { type: 'button' }, this.props.rootProps, this.props), renderAsAnchor ? Utilities_1.anchorProperties : Utilities_1.buttonProperties, [
-            'disabled' // Let disabled buttons be focused and styled as disabled.
-        ]);
-        // Check for ariaDescription, description or aria-describedby in the native props to determine source of aria-describedby
-        // otherwise default to null.
-        var ariaDescribedBy;
-        if (ariaDescription) {
-            ariaDescribedBy = _ariaDescriptionId;
-        }
-        else if (description) {
-            ariaDescribedBy = _descriptionId;
-        }
-        else if (nativeProps['aria-describedby']) {
-            ariaDescribedBy = nativeProps['aria-describedby'];
-        }
-        else {
-            ariaDescribedBy = null;
-        }
-        // If an explicit ariaLabel is given, use that as the label and we're done.
-        // If an explicit aria-labelledby is given, use that and we're done.
-        // If any kind of description is given (which will end up as an aria-describedby attribute),
-        // set the labelledby element. Otherwise, the button is labeled implicitly by the descendent
-        // text on the button (if it exists). Never set both aria-label and aria-labelledby.
-        var ariaLabelledBy = null;
-        if (!ariaLabel) {
-            if (nativeProps['aria-labelledby']) {
-                ariaLabelledBy = nativeProps['aria-labelledby'];
-            }
-            else if (ariaDescribedBy) {
-                ariaLabelledBy = text ? _labelId : null;
-            }
-        }
-        var buttonProps = Utilities_1.assign(nativeProps, {
-            className: this._classNames.root,
-            ref: this._resolveRef('_buttonElement'),
-            'disabled': isPrimaryButtonDisabled,
-            'aria-label': ariaLabel,
-            'aria-labelledby': ariaLabelledBy,
-            'aria-describedby': ariaDescribedBy,
-            'data-is-focusable': (this.props['data-is-focusable'] === false || disabled) ? false : true,
-            'aria-pressed': checked
-        });
-        if (ariaHidden) {
-            buttonProps['aria-hidden'] = true;
-        }
-        if (this._isSplitButton) {
-            return (this._onRenderSplitButtonContent(tag, buttonProps));
-        }
-        else if (this.props.menuProps) {
-            Utilities_1.assign(buttonProps, {
-                'onKeyDown': this._onMenuKeyDown,
-                'onClick': this._onMenuClick,
-                'aria-expanded': this._isExpanded,
-                'aria-owns': this.state.menuProps ? this._labelId + '-menu' : null,
-                'aria-haspopup': true
-            });
-        }
-        return this._onRenderContent(tag, buttonProps);
-    };
-    BaseButton.prototype.componentDidUpdate = function (prevProps, prevState) {
-        // If Button's menu was closed, run onAfterMenuDismiss
-        if (this.props.onAfterMenuDismiss && prevState.menuProps && !this.state.menuProps) {
-            this.props.onAfterMenuDismiss();
-        }
-    };
-    BaseButton.prototype.focus = function () {
-        if (this._buttonElement) {
-            this._buttonElement.focus();
-        }
-    };
-    BaseButton.prototype.dismissMenu = function () {
-        this.setState({ menuProps: null });
-    };
-    BaseButton.prototype._onRenderContent = function (tag, buttonProps) {
-        var props = this.props;
-        var Tag = tag;
-        var menuIconProps = props.menuIconProps, menuProps = props.menuProps, _a = props.onRenderIcon, onRenderIcon = _a === void 0 ? this._onRenderIcon : _a, _b = props.onRenderAriaDescription, onRenderAriaDescription = _b === void 0 ? this._onRenderAriaDescription : _b, _c = props.onRenderChildren, onRenderChildren = _c === void 0 ? this._onRenderChildren : _c, _d = props.onRenderMenu, onRenderMenu = _d === void 0 ? this._onRenderMenu : _d, _e = props.onRenderMenuIcon, onRenderMenuIcon = _e === void 0 ? this._onRenderMenuIcon : _e;
-        var Content = (React.createElement(Tag, tslib_1.__assign({}, buttonProps),
-            React.createElement("div", { className: this._classNames.flexContainer },
-                onRenderIcon(props, this._onRenderIcon),
-                this._onRenderTextContents(),
-                onRenderAriaDescription(props, this._onRenderAriaDescription),
-                onRenderChildren(props, this._onRenderChildren),
-                !this._isSplitButton && (menuProps || menuIconProps || this.props.onRenderMenuIcon) && onRenderMenuIcon(this.props, this._onRenderMenuIcon),
-                this.state.menuProps && !this.state.menuProps.doNotLayer && onRenderMenu(menuProps, this._onRenderMenu))));
-        if (menuProps && menuProps.doNotLayer) {
-            return (React.createElement("div", { style: { display: 'inline-block' } },
-                Content,
-                this.state.menuProps && onRenderMenu(menuProps, this._onRenderMenu)));
-        }
-        return Content;
-    };
-    BaseButton.prototype._onRenderIcon = function (buttonProps, defaultRender) {
-        var iconProps = this.props.iconProps;
-        if (iconProps) {
-            return Icon_1.Icon(tslib_1.__assign({}, iconProps, { className: this._classNames.icon }));
-        }
-        return null;
-    };
-    BaseButton.prototype._onRenderTextContents = function () {
-        var _a = this.props, text = _a.text, children = _a.children, description = _a.description, _b = _a.onRenderText, onRenderText = _b === void 0 ? this._onRenderText : _b, _c = _a.onRenderDescription, onRenderDescription = _c === void 0 ? this._onRenderDescription : _c;
-        if (text || typeof (children) === 'string' || description) {
-            return (React.createElement("div", { className: this._classNames.textContainer },
-                onRenderText(this.props, this._onRenderText),
-                onRenderDescription(this.props, this._onRenderDescription)));
-        }
-        return ([
-            onRenderText(this.props, this._onRenderText),
-            onRenderDescription(this.props, this._onRenderDescription)
-        ]);
-    };
-    BaseButton.prototype._onRenderText = function () {
-        var _a = this.props, children = _a.children, text = _a.text;
-        // For backwards compat, we should continue to take in the text content from children.
-        if (text === undefined && typeof (children) === 'string') {
-            text = children;
-        }
-        if (text) {
-            return (React.createElement("div", { key: this._labelId, className: this._classNames.label, id: this._labelId }, text));
-        }
-        return null;
-    };
-    BaseButton.prototype._onRenderChildren = function () {
-        var children = this.props.children;
-        // If children is just a string, either it or the text will be rendered via onRenderLabel
-        // If children is another component, it will be rendered after text
-        if (typeof (children) === 'string') {
-            return null;
-        }
-        return children;
-    };
-    BaseButton.prototype._onRenderDescription = function (props) {
-        var description = this.props.description;
-        // ms-Button-description is only shown when the button type is compound.
-        // In other cases it will not be displayed.
-        return description ? (React.createElement("div", { key: this._descriptionId, className: this._classNames.description, id: this._descriptionId }, description)) : (null);
-    };
-    BaseButton.prototype._onRenderAriaDescription = function () {
-        var ariaDescription = this.props.ariaDescription;
-        // If ariaDescription is given, descriptionId will be assigned to ariaDescriptionSpan,
-        // otherwise it will be assigned to descriptionSpan.
-        return ariaDescription ? (React.createElement("span", { className: this._classNames.screenReaderText, id: this._ariaDescriptionId }, ariaDescription)) : (null);
-    };
-    BaseButton.prototype._onRenderMenuIcon = function (props) {
-        var menuIconProps = this.props.menuIconProps;
-        return (React.createElement(Icon_1.Icon, tslib_1.__assign({ iconName: 'ChevronDown' }, menuIconProps, { className: this._classNames.menuIcon })));
-    };
-    BaseButton.prototype._onRenderMenu = function (menuProps) {
-        var _a = menuProps.onDismiss, onDismiss = _a === void 0 ? this._dismissMenu : _a;
-        return (React.createElement(ContextualMenu_1.ContextualMenu, tslib_1.__assign({ id: this._labelId + '-menu', directionalHint: 4 /* bottomLeftEdge */ }, menuProps, { className: 'ms-BaseButton-menuhost ' + menuProps.className, target: this._isSplitButton ? this._splitButtonContainer : this._buttonElement, labelElementId: this._labelId, onDismiss: onDismiss })));
-    };
-    BaseButton.prototype._dismissMenu = function () {
-        this.setState({ menuProps: null });
-    };
-    BaseButton.prototype._onToggleMenu = function () {
-        var menuProps = this.props.menuProps;
-        var currentMenuProps = this.state.menuProps;
-        this.setState({ menuProps: currentMenuProps ? null : menuProps });
-    };
-    BaseButton.prototype._onRenderSplitButtonContent = function (tag, buttonProps) {
-        var _a = this.props, _b = _a.styles, styles = _b === void 0 ? {} : _b, disabled = _a.disabled, checked = _a.checked, getSplitButtonClassNames = _a.getSplitButtonClassNames;
-        var classNames = getSplitButtonClassNames ? getSplitButtonClassNames(!!disabled, !!this.state.menuProps, !!checked) : styles && SplitButton_classNames_1.getClassNames(styles, !!disabled, !!this.state.menuProps, !!checked);
-        return (React.createElement("div", { "aria-labelledby": buttonProps.ariaLabel, "aria-disabled": disabled, "aria-haspopup": true, "aria-expanded": this._isExpanded, "aria-pressed": this.props.checked, "aria-describedby": buttonProps.ariaDescription, className: classNames && classNames.splitButtonContainer, onKeyDown: this._onMenuKeyDown, ref: this._resolveRef('_splitButtonContainer') },
-            React.createElement("span", { "aria-hidden": true, 
-                // TODO: THIS SHOULD BE REMOVED!
-                style: { 'display': 'flex' } },
-                this._onRenderContent(tag, buttonProps),
-                this._onRenderSplitButtonMenuButton(classNames),
-                this._onRenderSplitButtonDivider(classNames))));
-    };
-    BaseButton.prototype._onRenderSplitButtonDivider = function (classNames) {
-        if (classNames && classNames.divider) {
-            return React.createElement("span", { className: classNames.divider });
-        }
-        return null;
-    };
-    BaseButton.prototype._onRenderSplitButtonMenuButton = function (classNames) {
-        var _a = this.props, menuIconProps = _a.menuIconProps, splitButtonAriaLabel = _a.splitButtonAriaLabel;
-        if (menuIconProps === undefined) {
-            menuIconProps = {
-                iconName: 'ChevronDown'
-            };
-        }
-        var splitButtonProps = {
-            'styles': classNames,
-            'checked': this.props.checked,
-            'disabled': this.props.disabled,
-            'onClick': this._onMenuClick,
-            'menuProps': undefined,
-            'iconProps': menuIconProps,
-            'ariaLabel': splitButtonAriaLabel
-        };
-        return React.createElement(BaseButton, tslib_1.__assign({}, splitButtonProps));
-    };
-    BaseButton.prototype._onMenuKeyDown = function (ev) {
-        if (ev.which === 40 /* down */) {
-            var onMenuClick = this.props.onMenuClick;
-            onMenuClick && onMenuClick(ev, this);
-            !ev.defaultPrevented && this._onToggleMenu();
-            ev.preventDefault();
-            ev.stopPropagation();
-        }
-    };
-    BaseButton.prototype._onMenuClick = function (ev) {
-        var onMenuClick = this.props.onMenuClick;
-        onMenuClick && onMenuClick(ev, this);
-        !ev.defaultPrevented && this._onToggleMenu();
-        ev.preventDefault();
-        ev.stopPropagation();
-    };
-    BaseButton.defaultProps = {
-        baseClassName: 'ms-Button',
-        classNames: {},
-        styles: {},
-        split: false,
-    };
-    tslib_1.__decorate([
-        Utilities_1.autobind
-    ], BaseButton.prototype, "_onRenderIcon", null);
-    tslib_1.__decorate([
-        Utilities_1.autobind
-    ], BaseButton.prototype, "_onRenderTextContents", null);
-    tslib_1.__decorate([
-        Utilities_1.autobind
-    ], BaseButton.prototype, "_onRenderText", null);
-    tslib_1.__decorate([
-        Utilities_1.autobind
-    ], BaseButton.prototype, "_onRenderChildren", null);
-    tslib_1.__decorate([
-        Utilities_1.autobind
-    ], BaseButton.prototype, "_onRenderDescription", null);
-    tslib_1.__decorate([
-        Utilities_1.autobind
-    ], BaseButton.prototype, "_onRenderAriaDescription", null);
-    tslib_1.__decorate([
-        Utilities_1.autobind
-    ], BaseButton.prototype, "_onRenderMenuIcon", null);
-    tslib_1.__decorate([
-        Utilities_1.autobind
-    ], BaseButton.prototype, "_onRenderMenu", null);
-    tslib_1.__decorate([
-        Utilities_1.autobind
-    ], BaseButton.prototype, "_dismissMenu", null);
-    tslib_1.__decorate([
-        Utilities_1.autobind
-    ], BaseButton.prototype, "_onToggleMenu", null);
-    tslib_1.__decorate([
-        Utilities_1.autobind
-    ], BaseButton.prototype, "_onMenuKeyDown", null);
-    tslib_1.__decorate([
-        Utilities_1.autobind
-    ], BaseButton.prototype, "_onMenuClick", null);
-    return BaseButton;
-}(Utilities_1.BaseComponent));
-exports.BaseButton = BaseButton;
-
-
-/***/ }),
-/* 8 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-/**
- * Sets the virtual parent of an element.
- * Pass `undefined` as the `parent` to clear the virtual parent.
- *
- * @public
- */
-function setVirtualParent(child, parent) {
-    var virtualChild = child;
-    var virtualParent = parent;
-    if (!virtualChild._virtual) {
-        virtualChild._virtual = {
-            children: []
-        };
-    }
-    var oldParent = virtualChild._virtual.parent;
-    if (oldParent && oldParent !== parent) {
-        // Remove the child from its old parent.
-        var index = oldParent._virtual.children.indexOf(virtualChild);
-        if (index > -1) {
-            oldParent._virtual.children.splice(index, 1);
-        }
-    }
-    virtualChild._virtual.parent = virtualParent || undefined;
-    if (virtualParent) {
-        if (!virtualParent._virtual) {
-            virtualParent._virtual = {
-                children: []
-            };
-        }
-        virtualParent._virtual.children.push(virtualChild);
-    }
-}
-exports.setVirtualParent = setVirtualParent;
-/**
- * Gets the virtual parent given the child element, if it exists.
- *
- * @public
- */
-function getVirtualParent(child) {
-    var parent;
-    if (child && isVirtualElement(child)) {
-        parent = child._virtual.parent;
-    }
-    return parent;
-}
-exports.getVirtualParent = getVirtualParent;
-/**
- * Gets the element which is the parent of a given element.
- * If `allowVirtuaParents` is `true`, this method prefers the virtual parent over
- * real DOM parent when present.
- *
- * @public
- */
-function getParent(child, allowVirtualParents) {
-    if (allowVirtualParents === void 0) { allowVirtualParents = true; }
-    return child && (allowVirtualParents && getVirtualParent(child) ||
-        child.parentNode && child.parentNode);
-}
-exports.getParent = getParent;
-/**
- * Gets the elements which are child elements of the given element.
- * If `allowVirtualChildren` is `true`, this method enumerates virtual child elements
- * after the original children.
- * @param parent
- * @param allowVirtualChildren
- */
-function getChildren(parent, allowVirtualChildren) {
-    if (allowVirtualChildren === void 0) { allowVirtualChildren = true; }
-    var children = [];
-    if (parent) {
-        for (var i = 0; i < parent.children.length; i++) {
-            children.push(parent.children.item(i));
-        }
-        if (allowVirtualChildren && isVirtualElement(parent)) {
-            children.push.apply(children, parent._virtual.children);
-        }
-    }
-    return children;
-}
-exports.getChildren = getChildren;
-/**
- * Determines whether or not a parent element contains a given child element.
- * If `allowVirtualParents` is true, this method may return `true` if the child
- * has the parent in its virtual element hierarchy.
- *
- * @public
- */
-function elementContains(parent, child, allowVirtualParents) {
-    if (allowVirtualParents === void 0) { allowVirtualParents = true; }
-    var isContained = false;
-    if (parent && child) {
-        if (allowVirtualParents) {
-            isContained = false;
-            while (child) {
-                var nextParent = getParent(child);
-                if (nextParent === parent) {
-                    isContained = true;
-                    break;
-                }
-                child = nextParent;
-            }
-        }
-        else if (parent.contains) {
-            isContained = parent.contains(child);
-        }
-    }
-    return isContained;
-}
-exports.elementContains = elementContains;
-var _isSSR = false;
-/**
- * Helper to set ssr mode to simulate no window object returned from getWindow helper.
- *
- * @public
- */
-function setSSR(isEnabled) {
-    _isSSR = isEnabled;
-}
-exports.setSSR = setSSR;
-/**
- * Helper to get the window object.
- *
- * @public
- */
-function getWindow(rootElement) {
-    if (_isSSR || typeof window === 'undefined') {
-        return undefined;
-    }
-    else {
-        return (rootElement &&
-            rootElement.ownerDocument &&
-            rootElement.ownerDocument.defaultView ?
-            rootElement.ownerDocument.defaultView :
-            window);
-    }
-}
-exports.getWindow = getWindow;
-/**
- * Helper to get the document object.
- *
- * @public
- */
-function getDocument(rootElement) {
-    if (_isSSR || typeof document === 'undefined') {
-        return undefined;
-    }
-    else {
-        return rootElement && rootElement.ownerDocument ? rootElement.ownerDocument : document;
-    }
-}
-exports.getDocument = getDocument;
-/**
- * Helper to get bounding client rect, works with window.
- *
- * @public
- */
-function getRect(element) {
-    var rect;
-    if (element) {
-        if (element === window) {
-            rect = {
-                left: 0,
-                top: 0,
-                width: window.innerWidth,
-                height: window.innerHeight,
-                right: window.innerWidth,
-                bottom: window.innerHeight
-            };
-        }
-        else if (element.getBoundingClientRect) {
-            rect = element.getBoundingClientRect();
-        }
-    }
-    return rect;
-}
-exports.getRect = getRect;
-/**
- * Determines whether or not an element has the virtual hierarchy extension.
- *
- * @public
- */
-function isVirtualElement(element) {
-    return element && !!element._virtual;
-}
-
-
-/***/ }),
-/* 9 */
-/***/ (function(module, exports) {
-
-// shim for using process in browser
-var process = module.exports = {};
-
-// cached from whatever global is present so that test runners that stub it
-// don't break things.  But we need to wrap it in a try catch in case it is
-// wrapped in strict mode code which doesn't define any globals.  It's inside a
-// function because try/catches deoptimize in certain engines.
-
-var cachedSetTimeout;
-var cachedClearTimeout;
-
-function defaultSetTimout() {
-    throw new Error('setTimeout has not been defined');
-}
-function defaultClearTimeout () {
-    throw new Error('clearTimeout has not been defined');
-}
-(function () {
-    try {
-        if (typeof setTimeout === 'function') {
-            cachedSetTimeout = setTimeout;
-        } else {
-            cachedSetTimeout = defaultSetTimout;
-        }
-    } catch (e) {
-        cachedSetTimeout = defaultSetTimout;
-    }
-    try {
-        if (typeof clearTimeout === 'function') {
-            cachedClearTimeout = clearTimeout;
-        } else {
-            cachedClearTimeout = defaultClearTimeout;
-        }
-    } catch (e) {
-        cachedClearTimeout = defaultClearTimeout;
-    }
-} ())
-function runTimeout(fun) {
-    if (cachedSetTimeout === setTimeout) {
-        //normal enviroments in sane situations
-        return setTimeout(fun, 0);
-    }
-    // if setTimeout wasn't available but was latter defined
-    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
-        cachedSetTimeout = setTimeout;
-        return setTimeout(fun, 0);
-    }
-    try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
-        return cachedSetTimeout(fun, 0);
-    } catch(e){
-        try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
-            return cachedSetTimeout.call(null, fun, 0);
-        } catch(e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
-            return cachedSetTimeout.call(this, fun, 0);
-        }
-    }
-
-
-}
-function runClearTimeout(marker) {
-    if (cachedClearTimeout === clearTimeout) {
-        //normal enviroments in sane situations
-        return clearTimeout(marker);
-    }
-    // if clearTimeout wasn't available but was latter defined
-    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
-        cachedClearTimeout = clearTimeout;
-        return clearTimeout(marker);
-    }
-    try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
-        return cachedClearTimeout(marker);
-    } catch (e){
-        try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
-            return cachedClearTimeout.call(null, marker);
-        } catch (e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
-            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
-            return cachedClearTimeout.call(this, marker);
-        }
-    }
-
-
-
-}
-var queue = [];
-var draining = false;
-var currentQueue;
-var queueIndex = -1;
-
-function cleanUpNextTick() {
-    if (!draining || !currentQueue) {
-        return;
-    }
-    draining = false;
-    if (currentQueue.length) {
-        queue = currentQueue.concat(queue);
-    } else {
-        queueIndex = -1;
-    }
-    if (queue.length) {
-        drainQueue();
-    }
-}
-
-function drainQueue() {
-    if (draining) {
-        return;
-    }
-    var timeout = runTimeout(cleanUpNextTick);
-    draining = true;
-
-    var len = queue.length;
-    while(len) {
-        currentQueue = queue;
-        queue = [];
-        while (++queueIndex < len) {
-            if (currentQueue) {
-                currentQueue[queueIndex].run();
-            }
-        }
-        queueIndex = -1;
-        len = queue.length;
-    }
-    currentQueue = null;
-    draining = false;
-    runClearTimeout(timeout);
-}
-
-process.nextTick = function (fun) {
-    var args = new Array(arguments.length - 1);
-    if (arguments.length > 1) {
-        for (var i = 1; i < arguments.length; i++) {
-            args[i - 1] = arguments[i];
-        }
-    }
-    queue.push(new Item(fun, args));
-    if (queue.length === 1 && !draining) {
-        runTimeout(drainQueue);
-    }
-};
-
-// v8 likes predictible objects
-function Item(fun, array) {
-    this.fun = fun;
-    this.array = array;
-}
-Item.prototype.run = function () {
-    this.fun.apply(null, this.array);
-};
-process.title = 'browser';
-process.browser = true;
-process.env = {};
-process.argv = [];
-process.version = ''; // empty string to avoid regexp issues
-process.versions = {};
-
-function noop() {}
-
-process.on = noop;
-process.addListener = noop;
-process.once = noop;
-process.off = noop;
-process.removeListener = noop;
-process.removeAllListeners = noop;
-process.emit = noop;
-process.prependListener = noop;
-process.prependOnceListener = noop;
-
-process.listeners = function (name) { return [] }
-
-process.binding = function (name) {
-    throw new Error('process.binding is not supported');
-};
-
-process.cwd = function () { return '/' };
-process.chdir = function (dir) {
-    throw new Error('process.chdir is not supported');
-};
-process.umask = function() { return 0; };
-
-
-/***/ }),
-/* 10 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var Utilities_1 = __webpack_require__(1);
-var Styling_1 = __webpack_require__(3);
-var noOutline = {
-    outline: 0
-};
-var iconStyle = {
-    fontSize: Styling_1.FontSizes.icon,
-    margin: '0 4px',
-    height: '16px',
-    lineHeight: '16px',
-    textAlign: 'center',
-    verticalAlign: 'middle',
-    flexShrink: 0
-};
-/**
- * Gets the base button styles. Note: because it is a base class to be used with the `mergeRules`
- * helper, it should have values for all class names in the interface. This let `mergeRules` optimize
- * mixing class names together.
- */
-exports.getStyles = Utilities_1.memoizeFunction(function (theme) {
-    var semanticColors = theme.semanticColors;
-    var border = semanticColors.buttonBorder;
-    var disabledBackground = semanticColors.disabledBackground;
-    var disabledText = semanticColors.disabledText;
-    return {
-        root: [
-            Styling_1.getFocusStyle(theme, -1),
-            theme.fonts.medium,
-            {
-                boxSizing: 'border-box',
-                border: '1px solid ' + border,
-                userSelect: 'none',
-                display: 'inline-block',
-                textDecoration: 'none',
-                textAlign: 'center',
-                cursor: 'pointer',
-                verticalAlign: 'top',
-                padding: '0 16px',
-                borderRadius: 0
-            }
-        ],
-        rootDisabled: {
-            backgroundColor: disabledBackground,
-            color: disabledText,
-            cursor: 'default',
-            pointerEvents: 'none',
-            selectors: {
-                ':hover': noOutline,
-                ':focus': noOutline
-            }
-        },
-        iconDisabled: {
-            color: disabledText
-        },
-        menuIconDisabled: {
-            color: disabledText
-        },
-        flexContainer: {
-            display: 'flex',
-            height: '100%',
-            flexWrap: 'nowrap',
-            justifyContent: 'center',
-            alignItems: 'center'
-        },
-        textContainer: {
-            flexGrow: 1
-        },
-        icon: iconStyle,
-        menuIcon: [
-            iconStyle,
-            {
-                fontSize: Styling_1.FontSizes.small
-            }
-        ],
-        label: {
-            margin: '0 4px',
-            lineHeight: '100%'
-        },
-        screenReaderText: Styling_1.hiddenContentStyle
-    };
-});
-
-
-/***/ }),
-/* 11 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = __webpack_require__(0);
-/**
- * Injection mode for the stylesheet.
- *
- * @public
- */
-var InjectionMode;
-(function (InjectionMode) {
-    /**
-     * Avoids style injection, use getRules() to read the styles.
-     */
-    InjectionMode[InjectionMode["none"] = 0] = "none";
-    /**
-     * Inserts rules using the insertRule api.
-     */
-    InjectionMode[InjectionMode["insertNode"] = 1] = "insertNode";
-    /**
-     * Appends rules using appendChild.
-     */
-    InjectionMode[InjectionMode["appendChild"] = 2] = "appendChild";
-})(InjectionMode = exports.InjectionMode || (exports.InjectionMode = {}));
-var STYLESHEET_SETTING = '__stylesheet__';
-var _stylesheet;
-/**
- * Represents the state of styles registered in the page. Abstracts
- * the surface for adding styles to the stylesheet, exposes helpers
- * for reading the styles registered in server rendered scenarios.
- *
- * @public
- */
-var Stylesheet = /** @class */ (function () {
-    function Stylesheet(config) {
-        this._config = tslib_1.__assign({ injectionMode: 1 /* insertNode */, defaultPrefix: 'css' }, config);
-        this.reset();
-    }
-    /**
-     * Gets the singleton instance.
-     */
-    Stylesheet.getInstance = function () {
-        // tslint:disable-next-line:no-any
-        var win = typeof window !== 'undefined' ? window : {};
-        _stylesheet = win[STYLESHEET_SETTING];
-        if (!_stylesheet) {
-            // tslint:disable-next-line:no-string-literal
-            var fabricConfig = (win && win['FabricConfig']) || {};
-            _stylesheet = win[STYLESHEET_SETTING] = new Stylesheet(fabricConfig.mergeStyles);
-        }
-        return _stylesheet;
-    };
-    /**
-     * Configures the stylesheet.
-     */
-    Stylesheet.prototype.setConfig = function (config) {
-        this._config = tslib_1.__assign({}, this._config, config);
-    };
-    /**
-     * Generates a unique classname.
-     *
-     * @param displayName - Optional value to use as a prefix.
-     */
-    Stylesheet.prototype.getClassName = function (displayName) {
-        var prefix = displayName || this._config.defaultPrefix;
-        return prefix + "-" + this._counter++;
-    };
-    /**
-     * Used internally to cache information about a class which was
-     * registered with the stylesheet.
-     */
-    Stylesheet.prototype.cacheClassName = function (className, key, args, rules) {
-        this._keyToClassName[key] = className;
-        this._classNameToArgs[className] = {
-            args: args,
-            rules: rules
-        };
-    };
-    /**
-     * Gets the appropriate classname given a key which was previously
-     * registered using cacheClassName.
-     */
-    Stylesheet.prototype.classNameFromKey = function (key) {
-        return this._keyToClassName[key];
-    };
-    /**
-     * Gets the arguments associated with a given classname which was
-     * previously registered using cacheClassName.
-     */
-    Stylesheet.prototype.argsFromClassName = function (className) {
-        var entry = this._classNameToArgs[className];
-        return (entry && entry.args);
-    };
-    /**
-   * Gets the arguments associated with a given classname which was
-   * previously registered using cacheClassName.
-   */
-    Stylesheet.prototype.insertedRulesFromClassName = function (className) {
-        var entry = this._classNameToArgs[className];
-        return (entry && entry.rules);
-    };
-    /**
-     * Inserts a css rule into the stylesheet.
-     */
-    Stylesheet.prototype.insertRule = function (rule) {
-        var element = this._getElement();
-        var injectionMode = element ? this._config.injectionMode : 0 /* none */;
-        switch (injectionMode) {
-            case 1 /* insertNode */:
-                var sheet = element.sheet;
-                try {
-                    // tslint:disable-next-line:no-any
-                    sheet.insertRule(rule, sheet.cssRules.length);
-                }
-                catch (e) {
-                    /* no-op on errors */
-                }
-                break;
-            case 2 /* appendChild */:
-                _createStyleElement(rule);
-                break;
-            default:
-                this._rules.push(rule);
-                break;
-        }
-        if (this._config.onInsertRule) {
-            this._config.onInsertRule(rule);
-        }
-    };
-    /**
-     * Gets all rules registered with the stylesheet; only valid when
-     * using InsertionMode.none.
-     */
-    Stylesheet.prototype.getRules = function () {
-        return (this._rules.join('') || '') + (this._rulesToInsert.join('') || '');
-    };
-    /**
-     * Resets the internal state of the stylesheet. Only used in server
-     * rendered scenarios where we're using InsertionMode.none.
-     */
-    Stylesheet.prototype.reset = function () {
-        this._rules = [];
-        this._rulesToInsert = [];
-        this._counter = 0;
-        this._classNameToArgs = {};
-        this._keyToClassName = {};
-        if (this._timerId) {
-            clearTimeout(this._timerId);
-            this._timerId = 0;
-        }
-    };
-    Stylesheet.prototype._getElement = function () {
-        if (!this._styleElement && typeof document !== 'undefined') {
-            this._styleElement = _createStyleElement();
-        }
-        return this._styleElement;
-    };
-    return Stylesheet;
-}());
-exports.Stylesheet = Stylesheet;
-function _createStyleElement(content) {
-    var styleElement = document.createElement('style');
-    styleElement.setAttribute('data-merge-styles', 'true');
-    styleElement.type = 'text/css';
-    if (content) {
-        styleElement.appendChild(document.createTextNode(content));
-    }
-    document.head.appendChild(styleElement);
-    return styleElement;
-}
-
-
-/***/ }),
-/* 12 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(110), exports);
-
-
-/***/ }),
-/* 13 */
 /***/ (function(module, exports) {
 
 /*
@@ -1726,7 +754,7 @@ function toComment(sourceMap) {
 
 
 /***/ }),
-/* 14 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /*
@@ -2098,6 +1126,978 @@ function updateLink (link, options, obj) {
 
 
 /***/ }),
+/* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+var React = __webpack_require__(2);
+var Utilities_1 = __webpack_require__(1);
+var Icon_1 = __webpack_require__(14);
+var ContextualMenu_1 = __webpack_require__(126);
+var BaseButton_classNames_1 = __webpack_require__(156);
+var SplitButton_classNames_1 = __webpack_require__(157);
+var BaseButton = /** @class */ (function (_super) {
+    tslib_1.__extends(BaseButton, _super);
+    function BaseButton(props, rootClassName) {
+        var _this = _super.call(this, props) || this;
+        _this._warnConditionallyRequiredProps(['menuProps', 'onClick'], 'split', _this.props.split);
+        _this._warnDeprecations({
+            rootProps: undefined
+        });
+        _this._labelId = Utilities_1.getId();
+        _this._descriptionId = Utilities_1.getId();
+        _this._ariaDescriptionId = Utilities_1.getId();
+        _this.state = {
+            menuProps: null
+        };
+        return _this;
+    }
+    Object.defineProperty(BaseButton.prototype, "_isSplitButton", {
+        get: function () {
+            return (!!this.props.menuProps && !!this.props.onClick) && this.props.split === true;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(BaseButton.prototype, "_isExpanded", {
+        get: function () {
+            return !!this.state.menuProps;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    BaseButton.prototype.render = function () {
+        var _a = this.props, ariaDescription = _a.ariaDescription, ariaLabel = _a.ariaLabel, ariaHidden = _a.ariaHidden, className = _a.className, description = _a.description, disabled = _a.disabled, primaryDisabled = _a.primaryDisabled, href = _a.href, iconProps = _a.iconProps, menuIconProps = _a.menuIconProps, styles = _a.styles, text = _a.text, checked = _a.checked, variantClassName = _a.variantClassName, theme = _a.theme, getClassNames = _a.getClassNames;
+        var menuProps = this.state.menuProps;
+        // Button is disabled if the whole button (in case of splitbutton is disabled) or if the primary action is disabled
+        var isPrimaryButtonDisabled = (disabled || primaryDisabled);
+        this._classNames = getClassNames ? getClassNames(theme, className, variantClassName, iconProps && iconProps.className, menuIconProps && menuIconProps.className, isPrimaryButtonDisabled, checked, !!this.state.menuProps, this.props.split) : BaseButton_classNames_1.getBaseButtonClassNames(styles, className, variantClassName, iconProps && iconProps.className, menuIconProps && menuIconProps.className, isPrimaryButtonDisabled, checked, !!this.state.menuProps, this.props.split);
+        var _b = this, _ariaDescriptionId = _b._ariaDescriptionId, _labelId = _b._labelId, _descriptionId = _b._descriptionId;
+        // Anchor tag cannot be disabled hence in disabled state rendering
+        // anchor button as normal button
+        var renderAsAnchor = !isPrimaryButtonDisabled && !!href;
+        var tag = renderAsAnchor ? 'a' : 'button';
+        var nativeProps = Utilities_1.getNativeProps(Utilities_1.assign(renderAsAnchor ? {} : { type: 'button' }, this.props.rootProps, this.props), renderAsAnchor ? Utilities_1.anchorProperties : Utilities_1.buttonProperties, [
+            'disabled' // Let disabled buttons be focused and styled as disabled.
+        ]);
+        // Check for ariaDescription, description or aria-describedby in the native props to determine source of aria-describedby
+        // otherwise default to null.
+        var ariaDescribedBy;
+        if (ariaDescription) {
+            ariaDescribedBy = _ariaDescriptionId;
+        }
+        else if (description) {
+            ariaDescribedBy = _descriptionId;
+        }
+        else if (nativeProps['aria-describedby']) {
+            ariaDescribedBy = nativeProps['aria-describedby'];
+        }
+        else {
+            ariaDescribedBy = null;
+        }
+        // If an explicit ariaLabel is given, use that as the label and we're done.
+        // If an explicit aria-labelledby is given, use that and we're done.
+        // If any kind of description is given (which will end up as an aria-describedby attribute),
+        // set the labelledby element. Otherwise, the button is labeled implicitly by the descendent
+        // text on the button (if it exists). Never set both aria-label and aria-labelledby.
+        var ariaLabelledBy = null;
+        if (!ariaLabel) {
+            if (nativeProps['aria-labelledby']) {
+                ariaLabelledBy = nativeProps['aria-labelledby'];
+            }
+            else if (ariaDescribedBy) {
+                ariaLabelledBy = text ? _labelId : null;
+            }
+        }
+        var buttonProps = Utilities_1.assign(nativeProps, {
+            className: this._classNames.root,
+            ref: this._resolveRef('_buttonElement'),
+            'disabled': isPrimaryButtonDisabled,
+            'aria-label': ariaLabel,
+            'aria-labelledby': ariaLabelledBy,
+            'aria-describedby': ariaDescribedBy,
+            'data-is-focusable': (this.props['data-is-focusable'] === false || disabled) ? false : true,
+            'aria-pressed': checked
+        });
+        if (ariaHidden) {
+            buttonProps['aria-hidden'] = true;
+        }
+        if (this._isSplitButton) {
+            return (this._onRenderSplitButtonContent(tag, buttonProps));
+        }
+        else if (this.props.menuProps) {
+            Utilities_1.assign(buttonProps, {
+                'onKeyDown': this._onMenuKeyDown,
+                'onClick': this._onMenuClick,
+                'aria-expanded': this._isExpanded,
+                'aria-owns': this.state.menuProps ? this._labelId + '-menu' : null,
+                'aria-haspopup': true
+            });
+        }
+        return this._onRenderContent(tag, buttonProps);
+    };
+    BaseButton.prototype.componentDidUpdate = function (prevProps, prevState) {
+        // If Button's menu was closed, run onAfterMenuDismiss
+        if (this.props.onAfterMenuDismiss && prevState.menuProps && !this.state.menuProps) {
+            this.props.onAfterMenuDismiss();
+        }
+    };
+    BaseButton.prototype.focus = function () {
+        if (this._buttonElement) {
+            this._buttonElement.focus();
+        }
+    };
+    BaseButton.prototype.dismissMenu = function () {
+        this.setState({ menuProps: null });
+    };
+    BaseButton.prototype._onRenderContent = function (tag, buttonProps) {
+        var props = this.props;
+        var Tag = tag;
+        var menuIconProps = props.menuIconProps, menuProps = props.menuProps, _a = props.onRenderIcon, onRenderIcon = _a === void 0 ? this._onRenderIcon : _a, _b = props.onRenderAriaDescription, onRenderAriaDescription = _b === void 0 ? this._onRenderAriaDescription : _b, _c = props.onRenderChildren, onRenderChildren = _c === void 0 ? this._onRenderChildren : _c, _d = props.onRenderMenu, onRenderMenu = _d === void 0 ? this._onRenderMenu : _d, _e = props.onRenderMenuIcon, onRenderMenuIcon = _e === void 0 ? this._onRenderMenuIcon : _e;
+        var Content = (React.createElement(Tag, tslib_1.__assign({}, buttonProps),
+            React.createElement("div", { className: this._classNames.flexContainer },
+                onRenderIcon(props, this._onRenderIcon),
+                this._onRenderTextContents(),
+                onRenderAriaDescription(props, this._onRenderAriaDescription),
+                onRenderChildren(props, this._onRenderChildren),
+                !this._isSplitButton && (menuProps || menuIconProps || this.props.onRenderMenuIcon) && onRenderMenuIcon(this.props, this._onRenderMenuIcon),
+                this.state.menuProps && !this.state.menuProps.doNotLayer && onRenderMenu(menuProps, this._onRenderMenu))));
+        if (menuProps && menuProps.doNotLayer) {
+            return (React.createElement("div", { style: { display: 'inline-block' } },
+                Content,
+                this.state.menuProps && onRenderMenu(menuProps, this._onRenderMenu)));
+        }
+        return Content;
+    };
+    BaseButton.prototype._onRenderIcon = function (buttonProps, defaultRender) {
+        var iconProps = this.props.iconProps;
+        if (iconProps) {
+            return Icon_1.Icon(tslib_1.__assign({}, iconProps, { className: this._classNames.icon }));
+        }
+        return null;
+    };
+    BaseButton.prototype._onRenderTextContents = function () {
+        var _a = this.props, text = _a.text, children = _a.children, description = _a.description, _b = _a.onRenderText, onRenderText = _b === void 0 ? this._onRenderText : _b, _c = _a.onRenderDescription, onRenderDescription = _c === void 0 ? this._onRenderDescription : _c;
+        if (text || typeof (children) === 'string' || description) {
+            return (React.createElement("div", { className: this._classNames.textContainer },
+                onRenderText(this.props, this._onRenderText),
+                onRenderDescription(this.props, this._onRenderDescription)));
+        }
+        return ([
+            onRenderText(this.props, this._onRenderText),
+            onRenderDescription(this.props, this._onRenderDescription)
+        ]);
+    };
+    BaseButton.prototype._onRenderText = function () {
+        var _a = this.props, children = _a.children, text = _a.text;
+        // For backwards compat, we should continue to take in the text content from children.
+        if (text === undefined && typeof (children) === 'string') {
+            text = children;
+        }
+        if (text) {
+            return (React.createElement("div", { key: this._labelId, className: this._classNames.label, id: this._labelId }, text));
+        }
+        return null;
+    };
+    BaseButton.prototype._onRenderChildren = function () {
+        var children = this.props.children;
+        // If children is just a string, either it or the text will be rendered via onRenderLabel
+        // If children is another component, it will be rendered after text
+        if (typeof (children) === 'string') {
+            return null;
+        }
+        return children;
+    };
+    BaseButton.prototype._onRenderDescription = function (props) {
+        var description = this.props.description;
+        // ms-Button-description is only shown when the button type is compound.
+        // In other cases it will not be displayed.
+        return description ? (React.createElement("div", { key: this._descriptionId, className: this._classNames.description, id: this._descriptionId }, description)) : (null);
+    };
+    BaseButton.prototype._onRenderAriaDescription = function () {
+        var ariaDescription = this.props.ariaDescription;
+        // If ariaDescription is given, descriptionId will be assigned to ariaDescriptionSpan,
+        // otherwise it will be assigned to descriptionSpan.
+        return ariaDescription ? (React.createElement("span", { className: this._classNames.screenReaderText, id: this._ariaDescriptionId }, ariaDescription)) : (null);
+    };
+    BaseButton.prototype._onRenderMenuIcon = function (props) {
+        var menuIconProps = this.props.menuIconProps;
+        return (React.createElement(Icon_1.Icon, tslib_1.__assign({ iconName: 'ChevronDown' }, menuIconProps, { className: this._classNames.menuIcon })));
+    };
+    BaseButton.prototype._onRenderMenu = function (menuProps) {
+        var _a = menuProps.onDismiss, onDismiss = _a === void 0 ? this._dismissMenu : _a;
+        return (React.createElement(ContextualMenu_1.ContextualMenu, tslib_1.__assign({ id: this._labelId + '-menu', directionalHint: 4 /* bottomLeftEdge */ }, menuProps, { className: 'ms-BaseButton-menuhost ' + menuProps.className, target: this._isSplitButton ? this._splitButtonContainer : this._buttonElement, labelElementId: this._labelId, onDismiss: onDismiss })));
+    };
+    BaseButton.prototype._dismissMenu = function () {
+        this.setState({ menuProps: null });
+    };
+    BaseButton.prototype._onToggleMenu = function () {
+        var menuProps = this.props.menuProps;
+        var currentMenuProps = this.state.menuProps;
+        this.setState({ menuProps: currentMenuProps ? null : menuProps });
+    };
+    BaseButton.prototype._onRenderSplitButtonContent = function (tag, buttonProps) {
+        var _a = this.props, _b = _a.styles, styles = _b === void 0 ? {} : _b, disabled = _a.disabled, checked = _a.checked, getSplitButtonClassNames = _a.getSplitButtonClassNames;
+        var classNames = getSplitButtonClassNames ? getSplitButtonClassNames(!!disabled, !!this.state.menuProps, !!checked) : styles && SplitButton_classNames_1.getClassNames(styles, !!disabled, !!this.state.menuProps, !!checked);
+        return (React.createElement("div", { "aria-labelledby": buttonProps.ariaLabel, "aria-disabled": disabled, "aria-haspopup": true, "aria-expanded": this._isExpanded, "aria-pressed": this.props.checked, "aria-describedby": buttonProps.ariaDescription, className: classNames && classNames.splitButtonContainer, onKeyDown: this._onMenuKeyDown, ref: this._resolveRef('_splitButtonContainer') },
+            React.createElement("span", { "aria-hidden": true, 
+                // TODO: THIS SHOULD BE REMOVED!
+                style: { 'display': 'flex' } },
+                this._onRenderContent(tag, buttonProps),
+                this._onRenderSplitButtonMenuButton(classNames),
+                this._onRenderSplitButtonDivider(classNames))));
+    };
+    BaseButton.prototype._onRenderSplitButtonDivider = function (classNames) {
+        if (classNames && classNames.divider) {
+            return React.createElement("span", { className: classNames.divider });
+        }
+        return null;
+    };
+    BaseButton.prototype._onRenderSplitButtonMenuButton = function (classNames) {
+        var _a = this.props, menuIconProps = _a.menuIconProps, splitButtonAriaLabel = _a.splitButtonAriaLabel;
+        if (menuIconProps === undefined) {
+            menuIconProps = {
+                iconName: 'ChevronDown'
+            };
+        }
+        var splitButtonProps = {
+            'styles': classNames,
+            'checked': this.props.checked,
+            'disabled': this.props.disabled,
+            'onClick': this._onMenuClick,
+            'menuProps': undefined,
+            'iconProps': menuIconProps,
+            'ariaLabel': splitButtonAriaLabel
+        };
+        return React.createElement(BaseButton, tslib_1.__assign({}, splitButtonProps));
+    };
+    BaseButton.prototype._onMenuKeyDown = function (ev) {
+        if (ev.which === 40 /* down */) {
+            var onMenuClick = this.props.onMenuClick;
+            onMenuClick && onMenuClick(ev, this);
+            !ev.defaultPrevented && this._onToggleMenu();
+            ev.preventDefault();
+            ev.stopPropagation();
+        }
+    };
+    BaseButton.prototype._onMenuClick = function (ev) {
+        var onMenuClick = this.props.onMenuClick;
+        onMenuClick && onMenuClick(ev, this);
+        !ev.defaultPrevented && this._onToggleMenu();
+        ev.preventDefault();
+        ev.stopPropagation();
+    };
+    BaseButton.defaultProps = {
+        baseClassName: 'ms-Button',
+        classNames: {},
+        styles: {},
+        split: false,
+    };
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], BaseButton.prototype, "_onRenderIcon", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], BaseButton.prototype, "_onRenderTextContents", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], BaseButton.prototype, "_onRenderText", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], BaseButton.prototype, "_onRenderChildren", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], BaseButton.prototype, "_onRenderDescription", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], BaseButton.prototype, "_onRenderAriaDescription", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], BaseButton.prototype, "_onRenderMenuIcon", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], BaseButton.prototype, "_onRenderMenu", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], BaseButton.prototype, "_dismissMenu", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], BaseButton.prototype, "_onToggleMenu", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], BaseButton.prototype, "_onMenuKeyDown", null);
+    tslib_1.__decorate([
+        Utilities_1.autobind
+    ], BaseButton.prototype, "_onMenuClick", null);
+    return BaseButton;
+}(Utilities_1.BaseComponent));
+exports.BaseButton = BaseButton;
+
+
+/***/ }),
+/* 10 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * Sets the virtual parent of an element.
+ * Pass `undefined` as the `parent` to clear the virtual parent.
+ *
+ * @public
+ */
+function setVirtualParent(child, parent) {
+    var virtualChild = child;
+    var virtualParent = parent;
+    if (!virtualChild._virtual) {
+        virtualChild._virtual = {
+            children: []
+        };
+    }
+    var oldParent = virtualChild._virtual.parent;
+    if (oldParent && oldParent !== parent) {
+        // Remove the child from its old parent.
+        var index = oldParent._virtual.children.indexOf(virtualChild);
+        if (index > -1) {
+            oldParent._virtual.children.splice(index, 1);
+        }
+    }
+    virtualChild._virtual.parent = virtualParent || undefined;
+    if (virtualParent) {
+        if (!virtualParent._virtual) {
+            virtualParent._virtual = {
+                children: []
+            };
+        }
+        virtualParent._virtual.children.push(virtualChild);
+    }
+}
+exports.setVirtualParent = setVirtualParent;
+/**
+ * Gets the virtual parent given the child element, if it exists.
+ *
+ * @public
+ */
+function getVirtualParent(child) {
+    var parent;
+    if (child && isVirtualElement(child)) {
+        parent = child._virtual.parent;
+    }
+    return parent;
+}
+exports.getVirtualParent = getVirtualParent;
+/**
+ * Gets the element which is the parent of a given element.
+ * If `allowVirtuaParents` is `true`, this method prefers the virtual parent over
+ * real DOM parent when present.
+ *
+ * @public
+ */
+function getParent(child, allowVirtualParents) {
+    if (allowVirtualParents === void 0) { allowVirtualParents = true; }
+    return child && (allowVirtualParents && getVirtualParent(child) ||
+        child.parentNode && child.parentNode);
+}
+exports.getParent = getParent;
+/**
+ * Gets the elements which are child elements of the given element.
+ * If `allowVirtualChildren` is `true`, this method enumerates virtual child elements
+ * after the original children.
+ * @param parent
+ * @param allowVirtualChildren
+ */
+function getChildren(parent, allowVirtualChildren) {
+    if (allowVirtualChildren === void 0) { allowVirtualChildren = true; }
+    var children = [];
+    if (parent) {
+        for (var i = 0; i < parent.children.length; i++) {
+            children.push(parent.children.item(i));
+        }
+        if (allowVirtualChildren && isVirtualElement(parent)) {
+            children.push.apply(children, parent._virtual.children);
+        }
+    }
+    return children;
+}
+exports.getChildren = getChildren;
+/**
+ * Determines whether or not a parent element contains a given child element.
+ * If `allowVirtualParents` is true, this method may return `true` if the child
+ * has the parent in its virtual element hierarchy.
+ *
+ * @public
+ */
+function elementContains(parent, child, allowVirtualParents) {
+    if (allowVirtualParents === void 0) { allowVirtualParents = true; }
+    var isContained = false;
+    if (parent && child) {
+        if (allowVirtualParents) {
+            isContained = false;
+            while (child) {
+                var nextParent = getParent(child);
+                if (nextParent === parent) {
+                    isContained = true;
+                    break;
+                }
+                child = nextParent;
+            }
+        }
+        else if (parent.contains) {
+            isContained = parent.contains(child);
+        }
+    }
+    return isContained;
+}
+exports.elementContains = elementContains;
+var _isSSR = false;
+/**
+ * Helper to set ssr mode to simulate no window object returned from getWindow helper.
+ *
+ * @public
+ */
+function setSSR(isEnabled) {
+    _isSSR = isEnabled;
+}
+exports.setSSR = setSSR;
+/**
+ * Helper to get the window object.
+ *
+ * @public
+ */
+function getWindow(rootElement) {
+    if (_isSSR || typeof window === 'undefined') {
+        return undefined;
+    }
+    else {
+        return (rootElement &&
+            rootElement.ownerDocument &&
+            rootElement.ownerDocument.defaultView ?
+            rootElement.ownerDocument.defaultView :
+            window);
+    }
+}
+exports.getWindow = getWindow;
+/**
+ * Helper to get the document object.
+ *
+ * @public
+ */
+function getDocument(rootElement) {
+    if (_isSSR || typeof document === 'undefined') {
+        return undefined;
+    }
+    else {
+        return rootElement && rootElement.ownerDocument ? rootElement.ownerDocument : document;
+    }
+}
+exports.getDocument = getDocument;
+/**
+ * Helper to get bounding client rect, works with window.
+ *
+ * @public
+ */
+function getRect(element) {
+    var rect;
+    if (element) {
+        if (element === window) {
+            rect = {
+                left: 0,
+                top: 0,
+                width: window.innerWidth,
+                height: window.innerHeight,
+                right: window.innerWidth,
+                bottom: window.innerHeight
+            };
+        }
+        else if (element.getBoundingClientRect) {
+            rect = element.getBoundingClientRect();
+        }
+    }
+    return rect;
+}
+exports.getRect = getRect;
+/**
+ * Determines whether or not an element has the virtual hierarchy extension.
+ *
+ * @public
+ */
+function isVirtualElement(element) {
+    return element && !!element._virtual;
+}
+
+
+/***/ }),
+/* 11 */
+/***/ (function(module, exports) {
+
+// shim for using process in browser
+var process = module.exports = {};
+
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
+
+var cachedSetTimeout;
+var cachedClearTimeout;
+
+function defaultSetTimout() {
+    throw new Error('setTimeout has not been defined');
+}
+function defaultClearTimeout () {
+    throw new Error('clearTimeout has not been defined');
+}
+(function () {
+    try {
+        if (typeof setTimeout === 'function') {
+            cachedSetTimeout = setTimeout;
+        } else {
+            cachedSetTimeout = defaultSetTimout;
+        }
+    } catch (e) {
+        cachedSetTimeout = defaultSetTimout;
+    }
+    try {
+        if (typeof clearTimeout === 'function') {
+            cachedClearTimeout = clearTimeout;
+        } else {
+            cachedClearTimeout = defaultClearTimeout;
+        }
+    } catch (e) {
+        cachedClearTimeout = defaultClearTimeout;
+    }
+} ())
+function runTimeout(fun) {
+    if (cachedSetTimeout === setTimeout) {
+        //normal enviroments in sane situations
+        return setTimeout(fun, 0);
+    }
+    // if setTimeout wasn't available but was latter defined
+    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+        cachedSetTimeout = setTimeout;
+        return setTimeout(fun, 0);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedSetTimeout(fun, 0);
+    } catch(e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+            return cachedSetTimeout.call(null, fun, 0);
+        } catch(e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+            return cachedSetTimeout.call(this, fun, 0);
+        }
+    }
+
+
+}
+function runClearTimeout(marker) {
+    if (cachedClearTimeout === clearTimeout) {
+        //normal enviroments in sane situations
+        return clearTimeout(marker);
+    }
+    // if clearTimeout wasn't available but was latter defined
+    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+        cachedClearTimeout = clearTimeout;
+        return clearTimeout(marker);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedClearTimeout(marker);
+    } catch (e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+            return cachedClearTimeout.call(null, marker);
+        } catch (e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+            return cachedClearTimeout.call(this, marker);
+        }
+    }
+
+
+
+}
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    if (!draining || !currentQueue) {
+        return;
+    }
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
+}
+
+function drainQueue() {
+    if (draining) {
+        return;
+    }
+    var timeout = runTimeout(cleanUpNextTick);
+    draining = true;
+
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        while (++queueIndex < len) {
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
+        }
+        queueIndex = -1;
+        len = queue.length;
+    }
+    currentQueue = null;
+    draining = false;
+    runClearTimeout(timeout);
+}
+
+process.nextTick = function (fun) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
+        runTimeout(drainQueue);
+    }
+};
+
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+process.prependListener = noop;
+process.prependOnceListener = noop;
+
+process.listeners = function (name) { return [] }
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+process.umask = function() { return 0; };
+
+
+/***/ }),
+/* 12 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var Utilities_1 = __webpack_require__(1);
+var Styling_1 = __webpack_require__(3);
+var noOutline = {
+    outline: 0
+};
+var iconStyle = {
+    fontSize: Styling_1.FontSizes.icon,
+    margin: '0 4px',
+    height: '16px',
+    lineHeight: '16px',
+    textAlign: 'center',
+    verticalAlign: 'middle',
+    flexShrink: 0
+};
+/**
+ * Gets the base button styles. Note: because it is a base class to be used with the `mergeRules`
+ * helper, it should have values for all class names in the interface. This let `mergeRules` optimize
+ * mixing class names together.
+ */
+exports.getStyles = Utilities_1.memoizeFunction(function (theme) {
+    var semanticColors = theme.semanticColors;
+    var border = semanticColors.buttonBorder;
+    var disabledBackground = semanticColors.disabledBackground;
+    var disabledText = semanticColors.disabledText;
+    return {
+        root: [
+            Styling_1.getFocusStyle(theme, -1),
+            theme.fonts.medium,
+            {
+                boxSizing: 'border-box',
+                border: '1px solid ' + border,
+                userSelect: 'none',
+                display: 'inline-block',
+                textDecoration: 'none',
+                textAlign: 'center',
+                cursor: 'pointer',
+                verticalAlign: 'top',
+                padding: '0 16px',
+                borderRadius: 0
+            }
+        ],
+        rootDisabled: {
+            backgroundColor: disabledBackground,
+            color: disabledText,
+            cursor: 'default',
+            pointerEvents: 'none',
+            selectors: {
+                ':hover': noOutline,
+                ':focus': noOutline
+            }
+        },
+        iconDisabled: {
+            color: disabledText
+        },
+        menuIconDisabled: {
+            color: disabledText
+        },
+        flexContainer: {
+            display: 'flex',
+            height: '100%',
+            flexWrap: 'nowrap',
+            justifyContent: 'center',
+            alignItems: 'center'
+        },
+        textContainer: {
+            flexGrow: 1
+        },
+        icon: iconStyle,
+        menuIcon: [
+            iconStyle,
+            {
+                fontSize: Styling_1.FontSizes.small
+            }
+        ],
+        label: {
+            margin: '0 4px',
+            lineHeight: '100%'
+        },
+        screenReaderText: Styling_1.hiddenContentStyle
+    };
+});
+
+
+/***/ }),
+/* 13 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+/**
+ * Injection mode for the stylesheet.
+ *
+ * @public
+ */
+var InjectionMode;
+(function (InjectionMode) {
+    /**
+     * Avoids style injection, use getRules() to read the styles.
+     */
+    InjectionMode[InjectionMode["none"] = 0] = "none";
+    /**
+     * Inserts rules using the insertRule api.
+     */
+    InjectionMode[InjectionMode["insertNode"] = 1] = "insertNode";
+    /**
+     * Appends rules using appendChild.
+     */
+    InjectionMode[InjectionMode["appendChild"] = 2] = "appendChild";
+})(InjectionMode = exports.InjectionMode || (exports.InjectionMode = {}));
+var STYLESHEET_SETTING = '__stylesheet__';
+var _stylesheet;
+/**
+ * Represents the state of styles registered in the page. Abstracts
+ * the surface for adding styles to the stylesheet, exposes helpers
+ * for reading the styles registered in server rendered scenarios.
+ *
+ * @public
+ */
+var Stylesheet = /** @class */ (function () {
+    function Stylesheet(config) {
+        this._config = tslib_1.__assign({ injectionMode: 1 /* insertNode */, defaultPrefix: 'css' }, config);
+        this.reset();
+    }
+    /**
+     * Gets the singleton instance.
+     */
+    Stylesheet.getInstance = function () {
+        // tslint:disable-next-line:no-any
+        var win = typeof window !== 'undefined' ? window : {};
+        _stylesheet = win[STYLESHEET_SETTING];
+        if (!_stylesheet) {
+            // tslint:disable-next-line:no-string-literal
+            var fabricConfig = (win && win['FabricConfig']) || {};
+            _stylesheet = win[STYLESHEET_SETTING] = new Stylesheet(fabricConfig.mergeStyles);
+        }
+        return _stylesheet;
+    };
+    /**
+     * Configures the stylesheet.
+     */
+    Stylesheet.prototype.setConfig = function (config) {
+        this._config = tslib_1.__assign({}, this._config, config);
+    };
+    /**
+     * Generates a unique classname.
+     *
+     * @param displayName - Optional value to use as a prefix.
+     */
+    Stylesheet.prototype.getClassName = function (displayName) {
+        var prefix = displayName || this._config.defaultPrefix;
+        return prefix + "-" + this._counter++;
+    };
+    /**
+     * Used internally to cache information about a class which was
+     * registered with the stylesheet.
+     */
+    Stylesheet.prototype.cacheClassName = function (className, key, args, rules) {
+        this._keyToClassName[key] = className;
+        this._classNameToArgs[className] = {
+            args: args,
+            rules: rules
+        };
+    };
+    /**
+     * Gets the appropriate classname given a key which was previously
+     * registered using cacheClassName.
+     */
+    Stylesheet.prototype.classNameFromKey = function (key) {
+        return this._keyToClassName[key];
+    };
+    /**
+     * Gets the arguments associated with a given classname which was
+     * previously registered using cacheClassName.
+     */
+    Stylesheet.prototype.argsFromClassName = function (className) {
+        var entry = this._classNameToArgs[className];
+        return (entry && entry.args);
+    };
+    /**
+   * Gets the arguments associated with a given classname which was
+   * previously registered using cacheClassName.
+   */
+    Stylesheet.prototype.insertedRulesFromClassName = function (className) {
+        var entry = this._classNameToArgs[className];
+        return (entry && entry.rules);
+    };
+    /**
+     * Inserts a css rule into the stylesheet.
+     */
+    Stylesheet.prototype.insertRule = function (rule) {
+        var element = this._getElement();
+        var injectionMode = element ? this._config.injectionMode : 0 /* none */;
+        switch (injectionMode) {
+            case 1 /* insertNode */:
+                var sheet = element.sheet;
+                try {
+                    // tslint:disable-next-line:no-any
+                    sheet.insertRule(rule, sheet.cssRules.length);
+                }
+                catch (e) {
+                    /* no-op on errors */
+                }
+                break;
+            case 2 /* appendChild */:
+                _createStyleElement(rule);
+                break;
+            default:
+                this._rules.push(rule);
+                break;
+        }
+        if (this._config.onInsertRule) {
+            this._config.onInsertRule(rule);
+        }
+    };
+    /**
+     * Gets all rules registered with the stylesheet; only valid when
+     * using InsertionMode.none.
+     */
+    Stylesheet.prototype.getRules = function () {
+        return (this._rules.join('') || '') + (this._rulesToInsert.join('') || '');
+    };
+    /**
+     * Resets the internal state of the stylesheet. Only used in server
+     * rendered scenarios where we're using InsertionMode.none.
+     */
+    Stylesheet.prototype.reset = function () {
+        this._rules = [];
+        this._rulesToInsert = [];
+        this._counter = 0;
+        this._classNameToArgs = {};
+        this._keyToClassName = {};
+        if (this._timerId) {
+            clearTimeout(this._timerId);
+            this._timerId = 0;
+        }
+    };
+    Stylesheet.prototype._getElement = function () {
+        if (!this._styleElement && typeof document !== 'undefined') {
+            this._styleElement = _createStyleElement();
+        }
+        return this._styleElement;
+    };
+    return Stylesheet;
+}());
+exports.Stylesheet = Stylesheet;
+function _createStyleElement(content) {
+    var styleElement = document.createElement('style');
+    styleElement.setAttribute('data-merge-styles', 'true');
+    styleElement.type = 'text/css';
+    if (content) {
+        styleElement.appendChild(document.createTextNode(content));
+    }
+    document.head.appendChild(styleElement);
+    return styleElement;
+}
+
+
+/***/ }),
+/* 14 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+tslib_1.__exportStar(__webpack_require__(110), exports);
+
+
+/***/ }),
 /* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -2379,7 +2379,7 @@ exports.EventGroup = EventGroup;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Stylesheet_1 = __webpack_require__(11);
+var Stylesheet_1 = __webpack_require__(13);
 var kebabRules_1 = __webpack_require__(87);
 var prefixRules_1 = __webpack_require__(88);
 var provideUnits_1 = __webpack_require__(90);
@@ -2580,10 +2580,10 @@ exports.AnimationStyles = AnimationStyles_1.AnimationStyles;
 exports.AnimationVariables = AnimationStyles_1.AnimationVariables;
 var DefaultPalette_1 = __webpack_require__(28);
 exports.DefaultPalette = DefaultPalette_1.DefaultPalette;
-var DefaultFontStyles_1 = __webpack_require__(46);
+var DefaultFontStyles_1 = __webpack_require__(48);
 exports.DefaultFontStyles = DefaultFontStyles_1.DefaultFontStyles;
 exports.registerDefaultFontFaces = DefaultFontStyles_1.registerDefaultFontFaces;
-var fonts_1 = __webpack_require__(47);
+var fonts_1 = __webpack_require__(49);
 exports.FontSizes = fonts_1.FontSizes;
 exports.FontWeights = fonts_1.FontWeights;
 exports.IconFontSizes = fonts_1.IconFontSizes;
@@ -2613,7 +2613,7 @@ exports.normalize = GeneralStyles_1.normalize;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 var React = __webpack_require__(2);
-var BaseButton_1 = __webpack_require__(7);
+var BaseButton_1 = __webpack_require__(9);
 var Utilities_1 = __webpack_require__(1);
 var DefaultButton_styles_1 = __webpack_require__(159);
 var DefaultButton = /** @class */ (function (_super) {
@@ -3046,7 +3046,7 @@ function invariant(condition, format, a, b, c, d, e, f) {
 }
 
 module.exports = invariant;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(11)))
 
 /***/ }),
 /* 26 */
@@ -3076,7 +3076,7 @@ module.exports = ReactPropTypesSecret;
 Object.defineProperty(exports, "__esModule", { value: true });
 var buildClassMap_1 = __webpack_require__(114);
 exports.buildClassMap = buildClassMap_1.buildClassMap;
-var icons_1 = __webpack_require__(45);
+var icons_1 = __webpack_require__(47);
 exports.getIcon = icons_1.getIcon;
 exports.registerIcons = icons_1.registerIcons;
 exports.registerIconAlias = icons_1.registerIconAlias;
@@ -3153,7 +3153,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 /* tslint:disable:no-unused-variable */
 var React = __webpack_require__(2);
-var ReactDOM = __webpack_require__(31);
+var ReactDOM = __webpack_require__(33);
 /* tslint:enable:no-unused-variable */
 var Fabric_1 = __webpack_require__(147);
 var Utilities_1 = __webpack_require__(1);
@@ -3283,7 +3283,7 @@ exports.Layer = Layer;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 var React = __webpack_require__(2);
-var BaseButton_1 = __webpack_require__(7);
+var BaseButton_1 = __webpack_require__(9);
 var Utilities_1 = __webpack_require__(1);
 var ActionButton_styles_1 = __webpack_require__(160);
 var ActionButton = /** @class */ (function (_super) {
@@ -3310,12 +3310,77 @@ exports.ActionButton = ActionButton;
 
 /***/ }),
 /* 31 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __assign = (this && this.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var React = __webpack_require__(2);
+var Image_1 = __webpack_require__(64);
+var Label_1 = __webpack_require__(32);
+__webpack_require__(195);
+var MovieCard = /** @class */ (function (_super) {
+    __extends(MovieCard, _super);
+    function MovieCard() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    MovieCard.prototype.render = function () {
+        var imageProps = {
+            src: this.props.imgUrl,
+            imageFit: Image_1.ImageFit.cover
+        };
+        return React.createElement("button", { className: "MovieCard", onClick: this.props.onOpenMovie },
+            React.createElement(Image_1.Image, __assign({ className: "MovieCard-Cover" }, imageProps, { width: 150, height: 150 })),
+            React.createElement(Label_1.Label, { className: "MovieCard-Title" }, this.props.description));
+    };
+    MovieCard.defaultProps = {
+        imgUrl: 'http://placehold.it/500x500',
+        description: 'No title',
+        onOpenMovie: function () { },
+        onFavorite: function () { }
+    };
+    return MovieCard;
+}(React.Component));
+exports.MovieCard = MovieCard;
+
+
+/***/ }),
+/* 32 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+tslib_1.__exportStar(__webpack_require__(192), exports);
+
+
+/***/ }),
+/* 33 */
 /***/ (function(module, exports) {
 
 module.exports = ReactDOM;
 
 /***/ }),
-/* 32 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3739,13 +3804,13 @@ exports.Async = Async;
 
 
 /***/ }),
-/* 33 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var dom_1 = __webpack_require__(8);
+var dom_1 = __webpack_require__(10);
 var styles = __webpack_require__(71);
 var _scrollbarWidth;
 var _bodyScrollDisabledCount = 0;
@@ -3845,7 +3910,7 @@ exports.findScrollableParent = findScrollableParent;
 
 
 /***/ }),
-/* 34 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3853,7 +3918,7 @@ exports.findScrollableParent = findScrollableParent;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 var React = __webpack_require__(2);
-var Async_1 = __webpack_require__(32);
+var Async_1 = __webpack_require__(34);
 var EventGroup_1 = __webpack_require__(16);
 var warn_1 = __webpack_require__(21);
 /**
@@ -4090,7 +4155,7 @@ exports.nullRender = nullRender;
 
 
 /***/ }),
-/* 35 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(process) {/**
@@ -4122,10 +4187,10 @@ if (process.env.NODE_ENV !== 'production') {
   module.exports = __webpack_require__(77)();
 }
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(11)))
 
 /***/ }),
-/* 36 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4191,16 +4256,16 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 module.exports = warning;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(11)))
 
 /***/ }),
-/* 37 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Stylesheet_1 = __webpack_require__(11);
+var Stylesheet_1 = __webpack_require__(13);
 /**
  * Separates the classes and style objects. Any classes that are pre-registered
  * args are auto expanded into objects.
@@ -4253,7 +4318,7 @@ exports.extractStyleParts = extractStyleParts;
 
 
 /***/ }),
-/* 38 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4293,13 +4358,13 @@ exports.concatStyleSets = concatStyleSets;
 
 
 /***/ }),
-/* 39 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var dom_1 = __webpack_require__(8);
+var dom_1 = __webpack_require__(10);
 var localStorage_1 = __webpack_require__(100);
 // Default to undefined so that we initialize on first read.
 var _language;
@@ -4345,7 +4410,7 @@ exports.setLanguage = setLanguage;
 
 
 /***/ }),
-/* 40 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4457,10 +4522,10 @@ function mapEnumByName(
 }
 exports.mapEnumByName = mapEnumByName;
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(11)))
 
 /***/ }),
-/* 41 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4491,7 +4556,7 @@ var IconType;
 
 
 /***/ }),
-/* 42 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4502,7 +4567,7 @@ var tslib_1 = __webpack_require__(0);
 var React = __webpack_require__(2);
 /* tslint:enable:no-unused-variable */
 var Utilities_1 = __webpack_require__(1);
-var Image_types_1 = __webpack_require__(43);
+var Image_types_1 = __webpack_require__(45);
 var Styling_1 = __webpack_require__(3);
 var stylesImport = __webpack_require__(124);
 var styles = stylesImport;
@@ -4645,7 +4710,7 @@ var _a, _b;
 
 
 /***/ }),
-/* 43 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4715,7 +4780,7 @@ var ImageLoadState;
 
 
 /***/ }),
-/* 44 */
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4732,7 +4797,7 @@ exports.mergeStyles = index_1.mergeStyles;
 
 
 /***/ }),
-/* 45 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4835,15 +4900,15 @@ exports.setIconOptions = setIconOptions;
 
 
 /***/ }),
-/* 46 */
+/* 48 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var index_1 = __webpack_require__(6);
-var fonts_1 = __webpack_require__(47);
-var language_1 = __webpack_require__(39);
+var fonts_1 = __webpack_require__(49);
+var language_1 = __webpack_require__(41);
 // Default urls.
 var DefaultBaseUrl = 'https://static2.sharepointonline.com/files/fabric/assets';
 // Standard font styling.
@@ -4904,7 +4969,7 @@ registerDefaultFontFaces(_getFontBaseUrl());
 
 
 /***/ }),
-/* 47 */
+/* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5042,13 +5107,13 @@ function _createFont(size, weight, localeCode) {
 
 
 /***/ }),
-/* 48 */
+/* 50 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var DirectionalHint_1 = __webpack_require__(49);
+var DirectionalHint_1 = __webpack_require__(51);
 exports.DirectionalHint = DirectionalHint_1.DirectionalHint;
 var ContextualMenuItemType;
 (function (ContextualMenuItemType) {
@@ -5060,7 +5125,7 @@ var ContextualMenuItemType;
 
 
 /***/ }),
-/* 49 */
+/* 51 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5128,7 +5193,7 @@ var DirectionalHint;
 
 
 /***/ }),
-/* 50 */
+/* 52 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5139,7 +5204,7 @@ tslib_1.__exportStar(__webpack_require__(129), exports);
 
 
 /***/ }),
-/* 51 */
+/* 53 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5157,7 +5222,7 @@ var FocusZoneDirection;
 
 
 /***/ }),
-/* 52 */
+/* 54 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5182,7 +5247,7 @@ exports.getDividerClassNames = Utilities_1.memoizeFunction(function (theme) {
 
 
 /***/ }),
-/* 53 */
+/* 55 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5205,7 +5270,7 @@ var Position;
 
 
 /***/ }),
-/* 54 */
+/* 56 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5216,7 +5281,7 @@ tslib_1.__exportStar(__webpack_require__(142), exports);
 
 
 /***/ }),
-/* 55 */
+/* 57 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5242,7 +5307,7 @@ var ButtonType;
 
 
 /***/ }),
-/* 56 */
+/* 58 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5418,7 +5483,7 @@ exports.primaryStyles = primaryStyles;
 
 
 /***/ }),
-/* 57 */
+/* 59 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5426,7 +5491,7 @@ exports.primaryStyles = primaryStyles;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 var React = __webpack_require__(2);
-var BaseButton_1 = __webpack_require__(7);
+var BaseButton_1 = __webpack_require__(9);
 var Utilities_1 = __webpack_require__(1);
 var CompoundButton_styles_1 = __webpack_require__(161);
 var CompoundButton = /** @class */ (function (_super) {
@@ -5452,7 +5517,7 @@ exports.CompoundButton = CompoundButton;
 
 
 /***/ }),
-/* 58 */
+/* 60 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5460,7 +5525,7 @@ exports.CompoundButton = CompoundButton;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 var React = __webpack_require__(2);
-var BaseButton_1 = __webpack_require__(7);
+var BaseButton_1 = __webpack_require__(9);
 var Utilities_1 = __webpack_require__(1);
 var IconButton_styles_1 = __webpack_require__(162);
 var IconButton = /** @class */ (function (_super) {
@@ -5486,7 +5551,7 @@ exports.IconButton = IconButton;
 
 
 /***/ }),
-/* 59 */
+/* 61 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5518,7 +5583,7 @@ exports.PrimaryButton = PrimaryButton;
 
 
 /***/ }),
-/* 60 */
+/* 62 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5529,7 +5594,7 @@ exports.CommandButton = ActionButton_1.ActionButton;
 
 
 /***/ }),
-/* 61 */
+/* 63 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5617,29 +5682,18 @@ var PanelType;
 
 
 /***/ }),
-/* 62 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(192), exports);
-
-
-/***/ }),
-/* 63 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(193), exports);
-
-
-/***/ }),
 /* 64 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = __webpack_require__(0);
+tslib_1.__exportStar(__webpack_require__(191), exports);
+
+
+/***/ }),
+/* 65 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5653,49 +5707,6 @@ var FavoriteIconSizeEnum;
 
 
 /***/ }),
-/* 65 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var SpinnerSize;
-(function (SpinnerSize) {
-    /**
-     * 12px Spinner diameter
-     */
-    SpinnerSize[SpinnerSize["xSmall"] = 0] = "xSmall";
-    /**
-     * 16px Spinner diameter
-     */
-    SpinnerSize[SpinnerSize["small"] = 1] = "small";
-    /**
-     * 20px Spinner diameter
-     */
-    SpinnerSize[SpinnerSize["medium"] = 2] = "medium";
-    /**
-     * 28px Spinner diameter
-     */
-    SpinnerSize[SpinnerSize["large"] = 3] = "large";
-})(SpinnerSize = exports.SpinnerSize || (exports.SpinnerSize = {}));
-/**
- * Deprecated at v2.0.0, use 'SpinnerSize' instead.
- * @deprecated
- */
-var SpinnerType;
-(function (SpinnerType) {
-    /**
-     * Deprecated and will be removed at >= 2.0.0. Use SpinnerSize.medium instead.
-     */
-    SpinnerType[SpinnerType["normal"] = 0] = "normal";
-    /**
-     * Deprecated and will be removed at >= 2.0.0. Use SpinnerSize.large instead.
-     */
-    SpinnerType[SpinnerType["large"] = 1] = "large";
-})(SpinnerType = exports.SpinnerType || (exports.SpinnerType = {}));
-
-
-/***/ }),
 /* 66 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -5703,10 +5714,10 @@ var SpinnerType;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var React = __webpack_require__(2);
-var ReactDOM = __webpack_require__(31);
+var ReactDOM = __webpack_require__(33);
 var MovieDB_1 = __webpack_require__(67);
-var icons_1 = __webpack_require__(213);
-__webpack_require__(228);
+var icons_1 = __webpack_require__(214);
+__webpack_require__(229);
 icons_1.initializeIcons();
 /* ReactDOM.render(
     <MovieDB compiler="TypeScript" framework="React"/>,
@@ -5754,7 +5765,7 @@ var MovieDB = /** @class */ (function (_super) {
         var _this = _super.call(this, props, context) || this;
         _this.state = {
             showNavigation: false,
-            page: PageConfiguration_1.PageConfiguration.MOVIE,
+            page: PageConfiguration_1.PageConfiguration.FAVORITES,
             search: ''
         };
         return _this;
@@ -5849,18 +5860,18 @@ exports.MovieDB = MovieDB;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(7), exports);
-tslib_1.__exportStar(__webpack_require__(55), exports);
+tslib_1.__exportStar(__webpack_require__(9), exports);
+tslib_1.__exportStar(__webpack_require__(57), exports);
 tslib_1.__exportStar(__webpack_require__(158), exports);
 tslib_1.__exportStar(__webpack_require__(30), exports);
 tslib_1.__exportStar(__webpack_require__(163), exports);
-tslib_1.__exportStar(__webpack_require__(60), exports);
-tslib_1.__exportStar(__webpack_require__(57), exports);
-tslib_1.__exportStar(__webpack_require__(19), exports);
-tslib_1.__exportStar(__webpack_require__(60), exports);
-tslib_1.__exportStar(__webpack_require__(165), exports);
+tslib_1.__exportStar(__webpack_require__(62), exports);
 tslib_1.__exportStar(__webpack_require__(59), exports);
-tslib_1.__exportStar(__webpack_require__(58), exports);
+tslib_1.__exportStar(__webpack_require__(19), exports);
+tslib_1.__exportStar(__webpack_require__(62), exports);
+tslib_1.__exportStar(__webpack_require__(165), exports);
+tslib_1.__exportStar(__webpack_require__(61), exports);
+tslib_1.__exportStar(__webpack_require__(60), exports);
 
 
 /***/ }),
@@ -5871,9 +5882,9 @@ tslib_1.__exportStar(__webpack_require__(58), exports);
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(32), exports);
-tslib_1.__exportStar(__webpack_require__(70), exports);
 tslib_1.__exportStar(__webpack_require__(34), exports);
+tslib_1.__exportStar(__webpack_require__(70), exports);
+tslib_1.__exportStar(__webpack_require__(36), exports);
 tslib_1.__exportStar(__webpack_require__(22), exports);
 tslib_1.__exportStar(__webpack_require__(73), exports);
 tslib_1.__exportStar(__webpack_require__(78), exports);
@@ -5888,19 +5899,19 @@ tslib_1.__exportStar(__webpack_require__(84), exports);
 tslib_1.__exportStar(__webpack_require__(85), exports);
 tslib_1.__exportStar(__webpack_require__(95), exports);
 tslib_1.__exportStar(__webpack_require__(96), exports);
-tslib_1.__exportStar(__webpack_require__(8), exports);
+tslib_1.__exportStar(__webpack_require__(10), exports);
 tslib_1.__exportStar(__webpack_require__(97), exports);
 tslib_1.__exportStar(__webpack_require__(98), exports);
 tslib_1.__exportStar(__webpack_require__(99), exports);
-tslib_1.__exportStar(__webpack_require__(39), exports);
+tslib_1.__exportStar(__webpack_require__(41), exports);
 tslib_1.__exportStar(__webpack_require__(101), exports);
 tslib_1.__exportStar(__webpack_require__(102), exports);
-tslib_1.__exportStar(__webpack_require__(40), exports);
+tslib_1.__exportStar(__webpack_require__(42), exports);
 tslib_1.__exportStar(__webpack_require__(103), exports);
 tslib_1.__exportStar(__webpack_require__(104), exports);
 tslib_1.__exportStar(__webpack_require__(105), exports);
 tslib_1.__exportStar(__webpack_require__(106), exports);
-tslib_1.__exportStar(__webpack_require__(33), exports);
+tslib_1.__exportStar(__webpack_require__(35), exports);
 tslib_1.__exportStar(__webpack_require__(108), exports);
 tslib_1.__exportStar(__webpack_require__(109), exports);
 tslib_1.__exportStar(__webpack_require__(21), exports);
@@ -5914,8 +5925,8 @@ tslib_1.__exportStar(__webpack_require__(21), exports);
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var EventGroup_1 = __webpack_require__(16);
-var scroll_1 = __webpack_require__(33);
-var dom_1 = __webpack_require__(8);
+var scroll_1 = __webpack_require__(35);
+var dom_1 = __webpack_require__(10);
 var SCROLL_ITERATION_DELAY = 16;
 var SCROLL_GUTTER_HEIGHT = 100;
 var MAX_SCROLL_VELOCITY = 15;
@@ -6047,8 +6058,8 @@ module.exports = g;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 var React = __webpack_require__(2);
-var PropTypes = __webpack_require__(35);
-var BaseComponent_1 = __webpack_require__(34);
+var PropTypes = __webpack_require__(37);
+var BaseComponent_1 = __webpack_require__(36);
 /**
  * The Customizer component allows for default props to be mixed into components which
  * are decorated with the customizable() decorator. This enables injection scenarios like:
@@ -6120,7 +6131,7 @@ exports.Customizer = Customizer;
 
 var emptyFunction = __webpack_require__(24);
 var invariant = __webpack_require__(25);
-var warning = __webpack_require__(36);
+var warning = __webpack_require__(38);
 var assign = __webpack_require__(75);
 
 var ReactPropTypesSecret = __webpack_require__(26);
@@ -6652,7 +6663,7 @@ module.exports = function(isValidElement, throwOnDirectAccess) {
   return ReactPropTypes;
 };
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(11)))
 
 /***/ }),
 /* 75 */
@@ -6767,7 +6778,7 @@ module.exports = shouldUseNative() ? Object.assign : function (target, source) {
 
 if (process.env.NODE_ENV !== 'production') {
   var invariant = __webpack_require__(25);
-  var warning = __webpack_require__(36);
+  var warning = __webpack_require__(38);
   var ReactPropTypesSecret = __webpack_require__(26);
   var loggedTypeFailures = {};
 }
@@ -6816,7 +6827,7 @@ function checkPropTypes(typeSpecs, values, location, componentName, getStack) {
 
 module.exports = checkPropTypes;
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(11)))
 
 /***/ }),
 /* 77 */
@@ -7298,7 +7309,7 @@ exports.classNamesFunction = classNamesFunction;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var styleToClassName_1 = __webpack_require__(17);
-var extractStyleParts_1 = __webpack_require__(37);
+var extractStyleParts_1 = __webpack_require__(39);
 /**
  * Concatination helper, which can merge class names together. Skips over falsey values.
  *
@@ -7532,8 +7543,8 @@ function flipQuad(value) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var extractStyleParts_1 = __webpack_require__(37);
-var concatStyleSets_1 = __webpack_require__(38);
+var extractStyleParts_1 = __webpack_require__(39);
+var concatStyleSets_1 = __webpack_require__(40);
 var styleToClassName_1 = __webpack_require__(17);
 /**
  * Allows you to pass in 1 or more sets of areas which will return a merged
@@ -7587,7 +7598,7 @@ exports.mergeStyleSets = mergeStyleSets;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Stylesheet_1 = __webpack_require__(11);
+var Stylesheet_1 = __webpack_require__(13);
 var styleToClassName_1 = __webpack_require__(17);
 /**
  * Registers a font face.
@@ -7606,7 +7617,7 @@ exports.fontFace = fontFace;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Stylesheet_1 = __webpack_require__(11);
+var Stylesheet_1 = __webpack_require__(13);
 var styleToClassName_1 = __webpack_require__(17);
 /**
  * Registers keyframe definitions.
@@ -7682,7 +7693,7 @@ exports.css = css;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 var React = __webpack_require__(2);
-var PropTypes = __webpack_require__(35);
+var PropTypes = __webpack_require__(37);
 var Customizations_1 = __webpack_require__(22);
 function customizable(scope, fields
     // tslint:disable-next-line:no-any
@@ -7737,7 +7748,7 @@ exports.customizable = customizable;
 
 /* tslint:disable:no-string-literal */
 Object.defineProperty(exports, "__esModule", { value: true });
-var dom_1 = __webpack_require__(8);
+var dom_1 = __webpack_require__(10);
 var IS_FOCUSABLE_ATTRIBUTE = 'data-is-focusable';
 var IS_VISIBLE_ATTRIBUTE = 'data-is-visible';
 var FOCUSZONE_ID_ATTRIBUTE = 'data-focuszone-id';
@@ -8319,7 +8330,7 @@ exports.hasOverflow = hasOverflow;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var object_1 = __webpack_require__(40);
+var object_1 = __webpack_require__(42);
 /**
  * An array of events that are allowed on every html element type.
  *
@@ -8619,7 +8630,7 @@ exports.setBaseUrl = setBaseUrl;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var dom_1 = __webpack_require__(8);
+var dom_1 = __webpack_require__(10);
 var sessionStorage_1 = __webpack_require__(107);
 var RTL_LOCAL_STORAGE_KEY = 'isRTL';
 // Default to undefined so that we initialize on first read.
@@ -8800,7 +8811,7 @@ exports.styled = styled;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 tslib_1.__exportStar(__webpack_require__(111), exports);
-tslib_1.__exportStar(__webpack_require__(41), exports);
+tslib_1.__exportStar(__webpack_require__(43), exports);
 
 
 /***/ }),
@@ -8814,8 +8825,8 @@ var tslib_1 = __webpack_require__(0);
 /* tslint:disable */
 var React = __webpack_require__(2);
 /* tslint:enable */
-var Icon_types_1 = __webpack_require__(41);
-var Image_1 = __webpack_require__(42);
+var Icon_types_1 = __webpack_require__(43);
+var Image_1 = __webpack_require__(44);
 var Utilities_1 = __webpack_require__(1);
 var Styling_1 = __webpack_require__(3);
 var Icon_classNames_1 = __webpack_require__(125);
@@ -8884,7 +8895,7 @@ exports.AnimationClassNames = index_1.buildClassMap(index_2.AnimationStyles);
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var MergeStyles_1 = __webpack_require__(44);
+var MergeStyles_1 = __webpack_require__(46);
 /**
  * Builds a class names object from a given map.
  *
@@ -8925,7 +8936,7 @@ exports.buildClassMap = buildClassMap;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var index_1 = __webpack_require__(6);
-var icons_1 = __webpack_require__(45);
+var icons_1 = __webpack_require__(47);
 var defaultIconStyles = {
     display: 'inline-block'
 };
@@ -9184,7 +9195,7 @@ exports.hiddenContentStyle = {
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 var Customizations_1 = __webpack_require__(22);
-var DefaultFontStyles_1 = __webpack_require__(46);
+var DefaultFontStyles_1 = __webpack_require__(48);
 var DefaultPalette_1 = __webpack_require__(28);
 var load_themed_styles_1 = __webpack_require__(5);
 var _theme = {
@@ -9483,7 +9494,7 @@ tslib_1.__exportStar(__webpack_require__(127), exports);
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 tslib_1.__exportStar(__webpack_require__(128), exports);
-tslib_1.__exportStar(__webpack_require__(48), exports);
+tslib_1.__exportStar(__webpack_require__(50), exports);
 
 
 /***/ }),
@@ -9495,13 +9506,13 @@ tslib_1.__exportStar(__webpack_require__(48), exports);
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 var React = __webpack_require__(2);
-var ContextualMenu_types_1 = __webpack_require__(48);
-var FocusZone_1 = __webpack_require__(50);
+var ContextualMenu_types_1 = __webpack_require__(50);
+var FocusZone_1 = __webpack_require__(52);
 var ContextualMenu_classNames_1 = __webpack_require__(131);
 var Utilities_1 = __webpack_require__(1);
 var withResponsiveMode_1 = __webpack_require__(133);
 var Callout_1 = __webpack_require__(135);
-var Icon_1 = __webpack_require__(12);
+var Icon_1 = __webpack_require__(14);
 var Divider_1 = __webpack_require__(153);
 function hasSubmenuItems(item) {
     var submenuItems = getSubmenuItems(item);
@@ -10155,7 +10166,7 @@ exports.ContextualMenu = ContextualMenu;
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 tslib_1.__exportStar(__webpack_require__(130), exports);
-tslib_1.__exportStar(__webpack_require__(51), exports);
+tslib_1.__exportStar(__webpack_require__(53), exports);
 
 
 /***/ }),
@@ -10167,7 +10178,7 @@ tslib_1.__exportStar(__webpack_require__(51), exports);
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 var React = __webpack_require__(2);
-var FocusZone_types_1 = __webpack_require__(51);
+var FocusZone_types_1 = __webpack_require__(53);
 var Utilities_1 = __webpack_require__(1);
 var IS_FOCUSABLE_ATTRIBUTE = 'data-is-focusable';
 var IS_ENTER_DISABLED_ATTRIBUTE = 'data-disable-click-on-enter';
@@ -10789,7 +10800,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var Utilities_1 = __webpack_require__(1);
 var Styling_1 = __webpack_require__(3);
 var ContextualMenu_styles_1 = __webpack_require__(132);
-var VerticalDivider_classNames_1 = __webpack_require__(52);
+var VerticalDivider_classNames_1 = __webpack_require__(54);
 exports.getSplitButtonVerticalDividerClassNames = Utilities_1.memoizeFunction(function (theme) {
     var semanticColors = theme.semanticColors;
     var ContextualMenuDividerColor = semanticColors.bodyDivider;
@@ -11286,7 +11297,7 @@ tslib_1.__exportStar(__webpack_require__(136), exports);
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 tslib_1.__exportStar(__webpack_require__(137), exports);
-tslib_1.__exportStar(__webpack_require__(49), exports);
+tslib_1.__exportStar(__webpack_require__(51), exports);
 
 
 /***/ }),
@@ -11334,7 +11345,7 @@ var tslib_1 = __webpack_require__(0);
 var React = __webpack_require__(2);
 var Utilities_1 = __webpack_require__(1);
 var positioning_1 = __webpack_require__(139);
-var Popup_1 = __webpack_require__(54);
+var Popup_1 = __webpack_require__(56);
 var stylesImport = __webpack_require__(144);
 var Styling_1 = __webpack_require__(3);
 var styles = stylesImport;
@@ -11665,7 +11676,7 @@ tslib_1.__exportStar(__webpack_require__(140), exports);
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 tslib_1.__exportStar(__webpack_require__(141), exports);
-tslib_1.__exportStar(__webpack_require__(53), exports);
+tslib_1.__exportStar(__webpack_require__(55), exports);
 
 
 /***/ }),
@@ -11677,7 +11688,7 @@ tslib_1.__exportStar(__webpack_require__(53), exports);
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 var Utilities_1 = __webpack_require__(1);
-var positioning_types_1 = __webpack_require__(53);
+var positioning_types_1 = __webpack_require__(55);
 var Rectangle = /** @class */ (function (_super) {
     tslib_1.__extends(Rectangle, _super);
     function Rectangle() {
@@ -12640,7 +12651,7 @@ tslib_1.__exportStar(__webpack_require__(155), exports);
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var React = __webpack_require__(2);
-var VerticalDivider_classNames_1 = __webpack_require__(52);
+var VerticalDivider_classNames_1 = __webpack_require__(54);
 var Styling_1 = __webpack_require__(3);
 exports.VerticalDivider = function (props) {
     var theme = Styling_1.getTheme();
@@ -12819,12 +12830,12 @@ var tslib_1 = __webpack_require__(0);
 var React = __webpack_require__(2);
 /* tslint:enable:no-unused-variable */
 var Utilities_1 = __webpack_require__(1);
-var Button_types_1 = __webpack_require__(55);
+var Button_types_1 = __webpack_require__(57);
 var DefaultButton_1 = __webpack_require__(19);
 var ActionButton_1 = __webpack_require__(30);
-var CompoundButton_1 = __webpack_require__(57);
-var IconButton_1 = __webpack_require__(58);
-var PrimaryButton_1 = __webpack_require__(59);
+var CompoundButton_1 = __webpack_require__(59);
+var IconButton_1 = __webpack_require__(60);
+var PrimaryButton_1 = __webpack_require__(61);
 /**
  * This class is deprecated. Use the individual *Button components instead.
  * @deprecated
@@ -12870,9 +12881,9 @@ exports.Button = Button;
 Object.defineProperty(exports, "__esModule", { value: true });
 var Styling_1 = __webpack_require__(3);
 var Utilities_1 = __webpack_require__(1);
-var BaseButton_styles_1 = __webpack_require__(10);
+var BaseButton_styles_1 = __webpack_require__(12);
 var SplitButton_styles_1 = __webpack_require__(20);
-var ButtonThemes_1 = __webpack_require__(56);
+var ButtonThemes_1 = __webpack_require__(58);
 var DEFAULT_BUTTON_HEIGHT = '32px';
 var DEFAULT_BUTTON_MINWIDTH = '80px';
 exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles, primary) {
@@ -12900,7 +12911,7 @@ exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles, p
 Object.defineProperty(exports, "__esModule", { value: true });
 var Styling_1 = __webpack_require__(3);
 var Utilities_1 = __webpack_require__(1);
-var BaseButton_styles_1 = __webpack_require__(10);
+var BaseButton_styles_1 = __webpack_require__(12);
 var DEFAULT_BUTTON_HEIGHT = '40px';
 var DEFAULT_PADDING = '0 4px';
 exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles) {
@@ -12966,9 +12977,9 @@ exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var Styling_1 = __webpack_require__(3);
 var Utilities_1 = __webpack_require__(1);
-var BaseButton_styles_1 = __webpack_require__(10);
+var BaseButton_styles_1 = __webpack_require__(12);
 var SplitButton_styles_1 = __webpack_require__(20);
-var ButtonThemes_1 = __webpack_require__(56);
+var ButtonThemes_1 = __webpack_require__(58);
 exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles, primary) {
     var baseButtonStyles = BaseButton_styles_1.getStyles(theme);
     var splitButtonStyles = SplitButton_styles_1.getStyles(theme);
@@ -13070,7 +13081,7 @@ exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles, p
 Object.defineProperty(exports, "__esModule", { value: true });
 var Styling_1 = __webpack_require__(3);
 var Utilities_1 = __webpack_require__(1);
-var BaseButton_styles_1 = __webpack_require__(10);
+var BaseButton_styles_1 = __webpack_require__(12);
 var SplitButton_styles_1 = __webpack_require__(20);
 exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles) {
     var baseButtonStyles = BaseButton_styles_1.getStyles(theme);
@@ -13114,7 +13125,7 @@ exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 var React = __webpack_require__(2);
-var BaseButton_1 = __webpack_require__(7);
+var BaseButton_1 = __webpack_require__(9);
 var Utilities_1 = __webpack_require__(1);
 var CommandBarButton_styles_1 = __webpack_require__(164);
 var CommandBarButton = /** @class */ (function (_super) {
@@ -13148,7 +13159,7 @@ exports.CommandBarButton = CommandBarButton;
 Object.defineProperty(exports, "__esModule", { value: true });
 var Styling_1 = __webpack_require__(3);
 var Utilities_1 = __webpack_require__(1);
-var BaseButton_styles_1 = __webpack_require__(10);
+var BaseButton_styles_1 = __webpack_require__(12);
 var SplitButton_styles_1 = __webpack_require__(20);
 exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles, focusInset, focusColor) {
     var baseButtonStyles = BaseButton_styles_1.getStyles(theme);
@@ -13232,7 +13243,7 @@ exports.MessageBarButton = MessageBarButton;
 Object.defineProperty(exports, "__esModule", { value: true });
 var Styling_1 = __webpack_require__(3);
 var Utilities_1 = __webpack_require__(1);
-var BaseButton_styles_1 = __webpack_require__(10);
+var BaseButton_styles_1 = __webpack_require__(12);
 exports.getStyles = Utilities_1.memoizeFunction(function (theme, customStyles, focusInset, focusColor) {
     var baseButtonStyles = BaseButton_styles_1.getStyles(theme);
     var messageBarButtonStyles = {
@@ -13299,7 +13310,7 @@ var tslib_1 = __webpack_require__(0);
 var React = __webpack_require__(2);
 var Utilities_1 = __webpack_require__(1);
 var Button_1 = __webpack_require__(15);
-var Icon_1 = __webpack_require__(12);
+var Icon_1 = __webpack_require__(14);
 var getClassNames = Utilities_1.classNamesFunction();
 var SearchBoxBase = /** @class */ (function (_super) {
     tslib_1.__extends(SearchBoxBase, _super);
@@ -13636,9 +13647,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 var React = __webpack_require__(2);
 var Utilities_1 = __webpack_require__(1);
-var FocusZone_1 = __webpack_require__(50);
+var FocusZone_1 = __webpack_require__(52);
 var Button_1 = __webpack_require__(15);
-var Icon_1 = __webpack_require__(12);
+var Icon_1 = __webpack_require__(14);
 var stylesImport = __webpack_require__(175);
 var styles = stylesImport;
 var Styling_1 = __webpack_require__(3);
@@ -13918,7 +13929,7 @@ tslib_1.__exportStar(__webpack_require__(177), exports);
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
 tslib_1.__exportStar(__webpack_require__(178), exports);
-tslib_1.__exportStar(__webpack_require__(61), exports);
+tslib_1.__exportStar(__webpack_require__(63), exports);
 
 
 /***/ }),
@@ -13934,10 +13945,10 @@ var React = __webpack_require__(2);
 /* tslint:enable:no-unused-variable */
 var Utilities_1 = __webpack_require__(1);
 var index_1 = __webpack_require__(179);
-var Panel_types_1 = __webpack_require__(61);
+var Panel_types_1 = __webpack_require__(63);
 var Layer_1 = __webpack_require__(29);
 var Overlay_1 = __webpack_require__(181);
-var Popup_1 = __webpack_require__(54);
+var Popup_1 = __webpack_require__(56);
 var Button_1 = __webpack_require__(15);
 var Styling_1 = __webpack_require__(3);
 var stylesImport = __webpack_require__(185);
@@ -14401,7 +14412,7 @@ var transform;
 var options = {"hmr":true}
 options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(14)(content, options);
+var update = __webpack_require__(8)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -14421,7 +14432,7 @@ if(false) {
 /* 187 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(13)(undefined);
+exports = module.exports = __webpack_require__(7)(undefined);
 // imports
 
 
@@ -14534,10 +14545,10 @@ module.exports = function (css) {
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var HomePage_1 = __webpack_require__(190);
-var FavoritesPage_1 = __webpack_require__(198);
-var MoviePage_1 = __webpack_require__(199);
-var SearchHistoryPage_1 = __webpack_require__(207);
-var SearchResultsPage_1 = __webpack_require__(208);
+var FavoritesPage_1 = __webpack_require__(197);
+var MoviePage_1 = __webpack_require__(200);
+var SearchHistoryPage_1 = __webpack_require__(212);
+var SearchResultsPage_1 = __webpack_require__(213);
 var PageConfiguration = /** @class */ (function () {
     function PageConfiguration(pageName, page) {
         this.name = pageName;
@@ -14581,7 +14592,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var React = __webpack_require__(2);
-var MovieCard_1 = __webpack_require__(191);
+var MovieCard_1 = __webpack_require__(31);
 var HomePage = /** @class */ (function (_super) {
     __extends(HomePage, _super);
     function HomePage() {
@@ -14608,52 +14619,10 @@ exports.HomePage = HomePage;
 
 "use strict";
 
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var __assign = (this && this.__assign) || Object.assign || function(t) {
-    for (var s, i = 1, n = arguments.length; i < n; i++) {
-        s = arguments[i];
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-            t[p] = s[p];
-    }
-    return t;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-var React = __webpack_require__(2);
-var Image_1 = __webpack_require__(62);
-var Label_1 = __webpack_require__(63);
-__webpack_require__(196);
-var MovieCard = /** @class */ (function (_super) {
-    __extends(MovieCard, _super);
-    function MovieCard() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    MovieCard.prototype.render = function () {
-        var imageProps = {
-            src: this.props.imgUrl,
-            imageFit: Image_1.ImageFit.cover
-        };
-        return React.createElement("button", { className: "MovieCard", onClick: this.props.onOpenMovie },
-            React.createElement(Image_1.Image, __assign({ className: "MovieCard-Cover" }, imageProps, { width: 150, height: 150 })),
-            React.createElement(Label_1.Label, { className: "MovieCard-Title" }, this.props.description));
-    };
-    MovieCard.defaultProps = {
-        imgUrl: 'http://placehold.it/500x500',
-        description: 'No title',
-        onOpenMovie: function () { },
-        onFavorite: function () { }
-    };
-    return MovieCard;
-}(React.Component));
-exports.MovieCard = MovieCard;
+var tslib_1 = __webpack_require__(0);
+tslib_1.__exportStar(__webpack_require__(44), exports);
+tslib_1.__exportStar(__webpack_require__(45), exports);
 
 
 /***/ }),
@@ -14664,8 +14633,7 @@ exports.MovieCard = MovieCard;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(42), exports);
-tslib_1.__exportStar(__webpack_require__(43), exports);
+tslib_1.__exportStar(__webpack_require__(193), exports);
 
 
 /***/ }),
@@ -14676,20 +14644,9 @@ tslib_1.__exportStar(__webpack_require__(43), exports);
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(194), exports);
-
-
-/***/ }),
-/* 194 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = __webpack_require__(0);
 var React = __webpack_require__(2);
 var Utilities_1 = __webpack_require__(1);
-var Label_classNames_1 = __webpack_require__(195);
+var Label_classNames_1 = __webpack_require__(194);
 var Label = /** @class */ (function (_super) {
     tslib_1.__extends(Label, _super);
     function Label() {
@@ -14708,7 +14665,7 @@ exports.Label = Label;
 
 
 /***/ }),
-/* 195 */
+/* 194 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -14753,13 +14710,13 @@ exports.getLabelClassNames = Utilities_1.memoizeFunction(function (theme, classN
 
 
 /***/ }),
-/* 196 */
+/* 195 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(197);
+var content = __webpack_require__(196);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -14767,7 +14724,7 @@ var transform;
 var options = {"hmr":true}
 options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(14)(content, options);
+var update = __webpack_require__(8)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -14784,10 +14741,10 @@ if(false) {
 }
 
 /***/ }),
-/* 197 */
+/* 196 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(13)(undefined);
+exports = module.exports = __webpack_require__(7)(undefined);
 // imports
 
 
@@ -14798,7 +14755,7 @@ exports.push([module.i, ".MovieCard {\n  display: inline-flex;\n  background: ca
 
 
 /***/ }),
-/* 198 */
+/* 197 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -14815,13 +14772,27 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var React = __webpack_require__(2);
+var MovieCard_1 = __webpack_require__(31);
+__webpack_require__(198);
+//FavoritesPage.less
 var FavoritesPage = /** @class */ (function (_super) {
     __extends(FavoritesPage, _super);
     function FavoritesPage() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
+    FavoritesPage.prototype.getFavorits = function () {
+        //TODO
+        //Dummy Result
+        var cards = [];
+        for (var i = 0; i < 50; i++) {
+            cards.push(React.createElement(MovieCard_1.MovieCard, { key: 'MovieCard-' + i }));
+        }
+        return cards;
+    };
     FavoritesPage.prototype.render = function () {
-        return React.createElement("div", { className: "FavoritesPage" }, "This is the Favorites Page :D");
+        return React.createElement("div", { className: "FavoritesPage" },
+            React.createElement("div", { className: "TopContainer" }, this.getFavorits()),
+            React.createElement("div", { className: "BottomContainer" }));
     };
     return FavoritesPage;
 }(React.Component));
@@ -14829,7 +14800,52 @@ exports.FavoritesPage = FavoritesPage;
 
 
 /***/ }),
+/* 198 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(199);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {"hmr":true}
+options.transform = transform
+// add the styles to the DOM
+var update = __webpack_require__(8)(content, options);
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/dist/cjs.js!./FavoritesPage.less", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/dist/cjs.js!./FavoritesPage.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
 /* 199 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(7)(undefined);
+// imports
+
+
+// module
+exports.push([module.i, ".FavoritesPage {\n  display: flex;\n  flex-direction: column;\n  justify-content: flex-start;\n  align-items: center;\n}\n.FavoritesPage-TopContainer {\n  flex: none;\n}\n.FavoritesPage-BottomContainer {\n  flex: none;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 200 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -14846,10 +14862,11 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var React = __webpack_require__(2);
-var MovieCoverAndDescription_1 = __webpack_require__(200);
-var FavoriteButton_1 = __webpack_require__(203);
-var FavoriteIconSizeEnum_1 = __webpack_require__(64);
-var MovieInfo_1 = __webpack_require__(206);
+var MovieCoverAndDescription_1 = __webpack_require__(201);
+var FavoriteButton_1 = __webpack_require__(204);
+var FavoriteIconSizeEnum_1 = __webpack_require__(65);
+var MovieInfo_1 = __webpack_require__(207);
+__webpack_require__(210);
 var MoviePage = /** @class */ (function (_super) {
     __extends(MoviePage, _super);
     function MoviePage() {
@@ -14857,9 +14874,11 @@ var MoviePage = /** @class */ (function (_super) {
     }
     MoviePage.prototype.render = function () {
         return React.createElement("div", { className: "MoviePage" },
-            React.createElement(MovieCoverAndDescription_1.MovieCardAndDescription, { movieId: 123456 }),
-            React.createElement(FavoriteButton_1.FavoriteButton, { iconSize: FavoriteIconSizeEnum_1.FavoriteIconSizeEnum.Small }),
-            React.createElement(MovieInfo_1.MovieInfo, null));
+            React.createElement("div", { className: "MoviePage-rightContainer" },
+                React.createElement(MovieCoverAndDescription_1.MovieCardAndDescription, { movieId: 123456 })),
+            React.createElement("div", { className: "MoviePage-leftConatainer" },
+                React.createElement(FavoriteButton_1.FavoriteButton, { iconSize: FavoriteIconSizeEnum_1.FavoriteIconSizeEnum.Large, labelContent: "Add / remove from Favorits" }),
+                React.createElement(MovieInfo_1.MovieInfo, { genere: ["Action", "Comedy"], title: "Men in Black", duration: "120 min", releaseDate: "1998" })));
     };
     return MoviePage;
 }(React.Component));
@@ -14867,7 +14886,7 @@ exports.MoviePage = MoviePage;
 
 
 /***/ }),
-/* 200 */
+/* 201 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -14892,8 +14911,8 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var React = __webpack_require__(2);
-var Image_1 = __webpack_require__(62);
-__webpack_require__(201);
+var Image_1 = __webpack_require__(64);
+__webpack_require__(202);
 var MovieCardAndDescription = /** @class */ (function (_super) {
     __extends(MovieCardAndDescription, _super);
     function MovieCardAndDescription() {
@@ -14919,13 +14938,13 @@ exports.MovieCardAndDescription = MovieCardAndDescription;
 
 
 /***/ }),
-/* 201 */
+/* 202 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(202);
+var content = __webpack_require__(203);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -14933,7 +14952,7 @@ var transform;
 var options = {"hmr":true}
 options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(14)(content, options);
+var update = __webpack_require__(8)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -14950,10 +14969,10 @@ if(false) {
 }
 
 /***/ }),
-/* 202 */
+/* 203 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(13)(undefined);
+exports = module.exports = __webpack_require__(7)(undefined);
 // imports
 
 
@@ -14964,7 +14983,7 @@ exports.push([module.i, ".MovieCardAndDescription {\n  width: auto;\n  height: a
 
 
 /***/ }),
-/* 203 */
+/* 204 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -14987,11 +15006,11 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var React = __webpack_require__(2);
-var FavoriteIconSizeEnum_1 = __webpack_require__(64);
+var FavoriteIconSizeEnum_1 = __webpack_require__(65);
 var Utilities_1 = __webpack_require__(1);
-var Icon_1 = __webpack_require__(12);
-__webpack_require__(204);
-var Label_1 = __webpack_require__(63);
+var Icon_1 = __webpack_require__(14);
+__webpack_require__(205);
+var Label_1 = __webpack_require__(32);
 var FavoriteButton = /** @class */ (function (_super) {
     __extends(FavoriteButton, _super);
     function FavoriteButton(props, context) {
@@ -15040,13 +15059,13 @@ exports.FavoriteButton = FavoriteButton;
 
 
 /***/ }),
-/* 204 */
+/* 205 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(205);
+var content = __webpack_require__(206);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -15054,7 +15073,7 @@ var transform;
 var options = {"hmr":true}
 options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(14)(content, options);
+var update = __webpack_require__(8)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -15071,10 +15090,10 @@ if(false) {
 }
 
 /***/ }),
-/* 205 */
+/* 206 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(13)(undefined);
+exports = module.exports = __webpack_require__(7)(undefined);
 // imports
 
 
@@ -15085,7 +15104,7 @@ exports.push([module.i, ".FavoriteButton {\n  width: auto;\n  height: auto;\n  d
 
 
 /***/ }),
-/* 206 */
+/* 207 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15102,13 +15121,26 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var React = __webpack_require__(2);
+var Label_1 = __webpack_require__(32);
+__webpack_require__(208);
+//Info: Generes (Array 1...*), Title (1), Duration (0...1), Release Date (0...1)
 var MovieInfo = /** @class */ (function (_super) {
     __extends(MovieInfo, _super);
     function MovieInfo() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
     MovieInfo.prototype.render = function () {
-        return React.createElement("div", { className: "MovieInfo" });
+        return React.createElement("div", { className: "MovieInfo" },
+            React.createElement(Label_1.Label, { className: "MovieInfo-Genere" }, this.props.genere),
+            React.createElement(Label_1.Label, { className: "MovieInfo-Title" }, this.props.title),
+            React.createElement(Label_1.Label, { className: "MovieInfo-Duration" }, this.props.duration),
+            React.createElement(Label_1.Label, { className: "MovieInfo-ReleaseDate" }, this.props.releaseDate));
+    };
+    MovieInfo.defaultProps = {
+        genere: ["No genere defined!"],
+        title: "No titel defined!",
+        duration: "No duration avaible",
+        releaseDate: "No release date avaible"
     };
     return MovieInfo;
 }(React.Component));
@@ -15116,7 +15148,97 @@ exports.MovieInfo = MovieInfo;
 
 
 /***/ }),
-/* 207 */
+/* 208 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(209);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {"hmr":true}
+options.transform = transform
+// add the styles to the DOM
+var update = __webpack_require__(8)(content, options);
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/cjs.js!./MovieInfo.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/cjs.js!./MovieInfo.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 209 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(7)(undefined);
+// imports
+
+
+// module
+exports.push([module.i, ".MovieInfo {\n  display: flex;\n  flex-direction: column;\n  justify-content: flex-start;\n  align-items: flex-start;\n}\n.MovieInfo-Genere {\n  flex: none;\n}\n.MovieInfo-Title {\n  flex: none;\n}\n.MovieInfo-Duration {\n  flex: none;\n}\n.MovieInfo-ReleaseDate {\n  flex: none;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 210 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(211);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {"hmr":true}
+options.transform = transform
+// add the styles to the DOM
+var update = __webpack_require__(8)(content, options);
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/dist/cjs.js!./MoviePage.less", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/dist/cjs.js!./MoviePage.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 211 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(7)(undefined);
+// imports
+
+
+// module
+exports.push([module.i, ".MoviePage {\n  display: flex;\n  flex-direction: row;\n  justify-content: space-around;\n  align-items: center;\n}\n.MoviePage-rightContainer {\n  flex: none;\n  margin: 100px;\n}\n.MoviePage-leftConatainer {\n  flex: none;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 212 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15147,7 +15269,7 @@ exports.SearchHistoryPage = SearchHistoryPage;
 
 
 /***/ }),
-/* 208 */
+/* 213 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15164,19 +15286,28 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var React = __webpack_require__(2);
-var Spinner_1 = __webpack_require__(209);
+var MovieCard_1 = __webpack_require__(31);
 var SearchResultPage = /** @class */ (function (_super) {
     __extends(SearchResultPage, _super);
     function SearchResultPage() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
+    SearchResultPage.prototype.getSearchResult = function () {
+        //TODO: Search
+        //Dummy Result
+        var cards = [];
+        for (var i = 0; i < 50; i++) {
+            cards.push(React.createElement(MovieCard_1.MovieCard, { key: 'MovieCard-' + i }));
+        }
+        return cards;
+    };
     SearchResultPage.prototype.render = function () {
         return React.createElement("div", { className: "SearchResultPage" },
-            React.createElement("h2", null,
+            React.createElement("h2", { className: "SearchResultPage-SearchText" },
                 "Your search results for: ",
                 this.props.search,
-                " are coming:"),
-            React.createElement(Spinner_1.Spinner, { size: Spinner_1.SpinnerSize.large, label: 'Seriously, still loading...' }));
+                ":"),
+            React.createElement("div", { className: "SearchResultPage-SearchResult" }, this.getSearchResult()));
     };
     return SearchResultPage;
 }(React.Component));
@@ -15184,119 +15315,26 @@ exports.SearchResultPage = SearchResultPage;
 
 
 /***/ }),
-/* 209 */
+/* 214 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(210), exports);
-
-
-/***/ }),
-/* 210 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = __webpack_require__(0);
-tslib_1.__exportStar(__webpack_require__(211), exports);
-tslib_1.__exportStar(__webpack_require__(65), exports);
-
-
-/***/ }),
-/* 211 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var tslib_1 = __webpack_require__(0);
-var React = __webpack_require__(2);
-var Utilities_1 = __webpack_require__(1);
-var Spinner_types_1 = __webpack_require__(65);
-var stylesImport = __webpack_require__(212);
-var styles = stylesImport;
-var Spinner = /** @class */ (function (_super) {
-    tslib_1.__extends(Spinner, _super);
-    function Spinner() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    Spinner.prototype.render = function () {
-        var _a = this.props, type = _a.type, size = _a.size, label = _a.label, className = _a.className, ariaLive = _a.ariaLive, ariaLabel = _a.ariaLabel; // TODO remove deprecated type property at >= 2.0.0
-        var statusMessage = ariaLabel || label;
-        return (React.createElement("div", { className: Utilities_1.css('ms-Spinner', styles.root, className) },
-            React.createElement("div", { className: Utilities_1.css('ms-Spinner-circle', styles.circle, (_b = {},
-                    _b['ms-Spinner--xSmall ' + styles.circleIsXSmall] = size === Spinner_types_1.SpinnerSize.xSmall,
-                    _b['ms-Spinner--small ' + styles.circleIsSmall] = size === Spinner_types_1.SpinnerSize.small,
-                    _b['ms-Spinner--medium ' + styles.circleIsMedium] = size === Spinner_types_1.SpinnerSize.medium,
-                    _b['ms-Spinner--large ' + styles.circleIsLarge] = size === Spinner_types_1.SpinnerSize.large,
-                    _b['ms-Spinner--normal ' + styles.circleIsTypeMedium] = type === Spinner_types_1.SpinnerType.normal,
-                    _b['ms-Spinner--large ' + styles.circleIsTypeLarge] = type === Spinner_types_1.SpinnerType.large // TODO remove deprecated value at >= 2.0.0
-                ,
-                    _b)) }),
-            label && React.createElement("div", { className: Utilities_1.css('ms-Spinner-label', styles.label) }, label),
-            statusMessage &&
-                React.createElement("div", { role: 'status', "aria-live": ariaLive },
-                    React.createElement(Utilities_1.DelayedRender, null,
-                        React.createElement("div", { className: styles.screenReaderOnly }, statusMessage)))));
-        var _b;
-    };
-    Spinner.defaultProps = {
-        size: Spinner_types_1.SpinnerSize.medium,
-        ariaLive: 'polite'
-    };
-    return Spinner;
-}(Utilities_1.BaseComponent));
-exports.Spinner = Spinner;
-
-
-/***/ }),
-/* 212 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-/* tslint:disable */
-var load_themed_styles_1 = __webpack_require__(5);
-load_themed_styles_1.loadStyles([{ "rawString": "@-webkit-keyframes spinAnimation_b9632ab7{0%{-webkit-transform:rotate(0deg);transform:rotate(0deg)}100%{-webkit-transform:rotate(360deg);transform:rotate(360deg)}}@keyframes spinAnimation_b9632ab7{0%{-webkit-transform:rotate(0deg);transform:rotate(0deg)}100%{-webkit-transform:rotate(360deg);transform:rotate(360deg)}}.root_b9632ab7>.circle_b9632ab7{margin:auto;-webkit-box-sizing:border-box;box-sizing:border-box;border-radius:50%;width:100%;height:100%;border:1.5px solid " }, { "theme": "themeLight", "defaultValue": "#c7e0f4" }, { "rawString": ";border-top-color:" }, { "theme": "themePrimary", "defaultValue": "#0078d7" }, { "rawString": ";-webkit-animation:spinAnimation_b9632ab7 1.3s infinite cubic-bezier(0.53, 0.21, 0.29, 0.67);animation:spinAnimation_b9632ab7 1.3s infinite cubic-bezier(0.53, 0.21, 0.29, 0.67)}.root_b9632ab7>.circle_b9632ab7.circleIsXSmall_b9632ab7{width:12px;height:12px}.root_b9632ab7>.circle_b9632ab7.circleIsSmall_b9632ab7{width:16px;height:16px}.root_b9632ab7>.circle_b9632ab7.circleIsTypeMedium_b9632ab7,.root_b9632ab7>.circle_b9632ab7.circleIsMedium_b9632ab7{width:20px;height:20px}.root_b9632ab7>.circle_b9632ab7.circleIsTypeLarge_b9632ab7,.root_b9632ab7>.circle_b9632ab7.circleIsLarge_b9632ab7{width:28px;height:28px}.root_b9632ab7 .label_b9632ab7{color:" }, { "theme": "themePrimary", "defaultValue": "#0078d7" }, { "rawString": ";margin-top:10px;text-align:center}.root_b9632ab7 .screenReaderOnly_b9632ab7{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0, 0, 0, 0);border:0}@media screen and (-ms-high-contrast: active){.root_b9632ab7>.circle_b9632ab7{border-top-color:Highlight}}\n" }]);
-exports.root = "root_b9632ab7";
-exports.circle = "circle_b9632ab7";
-exports.spinAnimation = "spinAnimation_b9632ab7";
-exports.circleIsXSmall = "circleIsXSmall_b9632ab7";
-exports.circleIsSmall = "circleIsSmall_b9632ab7";
-exports.circleIsTypeMedium = "circleIsTypeMedium_b9632ab7";
-exports.circleIsMedium = "circleIsMedium_b9632ab7";
-exports.circleIsTypeLarge = "circleIsTypeLarge_b9632ab7";
-exports.circleIsLarge = "circleIsLarge_b9632ab7";
-exports.label = "label_b9632ab7";
-exports.screenReaderOnly = "screenReaderOnly_b9632ab7";
-
-
-/***/ }),
-/* 213 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var fabric_icons_1 = __webpack_require__(214);
-var fabric_icons_0_1 = __webpack_require__(215);
-var fabric_icons_1_1 = __webpack_require__(216);
-var fabric_icons_2_1 = __webpack_require__(217);
-var fabric_icons_3_1 = __webpack_require__(218);
-var fabric_icons_4_1 = __webpack_require__(219);
-var fabric_icons_5_1 = __webpack_require__(220);
-var fabric_icons_6_1 = __webpack_require__(221);
-var fabric_icons_7_1 = __webpack_require__(222);
-var fabric_icons_8_1 = __webpack_require__(223);
-var fabric_icons_9_1 = __webpack_require__(224);
-var fabric_icons_10_1 = __webpack_require__(225);
-var fabric_icons_11_1 = __webpack_require__(226);
-__webpack_require__(227);
+var fabric_icons_1 = __webpack_require__(215);
+var fabric_icons_0_1 = __webpack_require__(216);
+var fabric_icons_1_1 = __webpack_require__(217);
+var fabric_icons_2_1 = __webpack_require__(218);
+var fabric_icons_3_1 = __webpack_require__(219);
+var fabric_icons_4_1 = __webpack_require__(220);
+var fabric_icons_5_1 = __webpack_require__(221);
+var fabric_icons_6_1 = __webpack_require__(222);
+var fabric_icons_7_1 = __webpack_require__(223);
+var fabric_icons_8_1 = __webpack_require__(224);
+var fabric_icons_9_1 = __webpack_require__(225);
+var fabric_icons_10_1 = __webpack_require__(226);
+var fabric_icons_11_1 = __webpack_require__(227);
+__webpack_require__(228);
 var DEFAULT_BASE_URL = 'https://spoprod-a.akamaihd.net/files/fabric/assets/icons/';
 function initializeIcons(baseUrl, options) {
     if (baseUrl === void 0) { baseUrl = DEFAULT_BASE_URL; }
@@ -15306,7 +15344,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 214 */
+/* 215 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15391,7 +15429,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 215 */
+/* 216 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15522,7 +15560,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 216 */
+/* 217 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15653,7 +15691,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 217 */
+/* 218 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15784,7 +15822,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 218 */
+/* 219 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15915,7 +15953,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 219 */
+/* 220 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16042,7 +16080,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 220 */
+/* 221 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16172,7 +16210,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 221 */
+/* 222 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16301,7 +16339,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 222 */
+/* 223 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16432,7 +16470,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 223 */
+/* 224 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16563,7 +16601,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 224 */
+/* 225 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16694,7 +16732,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 225 */
+/* 226 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16821,7 +16859,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 226 */
+/* 227 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16936,7 +16974,7 @@ exports.initializeIcons = initializeIcons;
 
 
 /***/ }),
-/* 227 */
+/* 228 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16947,13 +16985,13 @@ index_1.registerIconAlias('trash', 'delete');
 
 
 /***/ }),
-/* 228 */
+/* 229 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(229);
+var content = __webpack_require__(230);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -16961,7 +16999,7 @@ var transform;
 var options = {"hmr":true}
 options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(14)(content, options);
+var update = __webpack_require__(8)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -16978,10 +17016,10 @@ if(false) {
 }
 
 /***/ }),
-/* 229 */
+/* 230 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(13)(undefined);
+exports = module.exports = __webpack_require__(7)(undefined);
 // imports
 
 

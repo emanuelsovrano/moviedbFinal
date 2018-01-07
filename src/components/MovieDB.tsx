@@ -27,7 +27,7 @@ export class MovieDB extends React.Component<IMovieDBProps, IMovieDBState> {
         super(props, context);
         this.state = {
             showNavigation: false,
-            page: PageConfiguration.MOVIE,
+            page: PageConfiguration.FAVORITES,
             search: ''
         };
     }

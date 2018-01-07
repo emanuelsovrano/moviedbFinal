@@ -1,14 +1,27 @@
 import * as React from "react";
+import { MovieCard } from "../components/movieCard/MovieCard";
+import './FavoritesPage.less';
+//FavoritesPage.less
 
-export interface IFavoritesPageProps {
-    ka: string;
-}
+export class FavoritesPage extends React.Component<{}, {}> {
 
-export class FavoritesPage extends React.Component<IFavoritesPageProps, {}> {
+    private getFavorits(): JSX.Element[]{
+        //TODO
+
+        //Dummy Result
+        const cards: JSX.Element[] = [];
+        for(let i = 0; i < 50; i++) {
+            cards.push(<MovieCard key={'MovieCard-' + i} />);
+        }
+        return cards;
+    }
 
     public render(): JSX.Element {
         return <div className="FavoritesPage">
-            This is the Favorites Page :D
+            <div className="TopContainer" >
+                {this.getFavorits()}</div>
+            <div className="BottomContainer" >
+            </div>
         </div>;
     }
 }
