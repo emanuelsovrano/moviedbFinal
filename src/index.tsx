@@ -14,6 +14,6 @@ initializeIcons();
 ); */
 
 ReactDOM.render(
-    <MovieDB compiler="TypeScript" framework="React"/>,
+    <MovieDB/>,
     document.getElementById("content")
 );
