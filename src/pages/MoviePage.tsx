@@ -4,9 +4,10 @@ import { FavoriteButton } from "../components/favoriteButton/FavoriteButton";
 import { FavoriteIconSizeEnum} from "../components/favoriteButton/FavoriteIconSizeEnum";
 import { MovieInfo } from "../components/movieInfo/MovieInfo";
 import './MoviePage.less';
+import { Movie } from "../models/Movie";
 
 export interface IMoviePageProps {
-    Prop: string;
+    movie: Movie;
 }
 
 export class MoviePage extends React.Component<IMoviePageProps, {}> {
@@ -14,12 +15,21 @@ export class MoviePage extends React.Component<IMoviePageProps, {}> {
     public render(): JSX.Element {
         return <div className="MoviePage">
             <div className="MoviePage-rightContainer" >
-                <MovieCardAndDescription movieId={123456} />
+                <MovieCardAndDescription
+                    movieId={this.props.movie.id}
+                    imgUrl={this.props.movie.cover}
+                    description={this.props.movie.description}
+                />
             </div>
             <div className="MoviePage-leftConatainer" >
                 {/* <FavoriteButton iconSize={FavoriteIconSizeEnum.Small}/> */}
                 <FavoriteButton iconSize={FavoriteIconSizeEnum.Large} labelContent="Add / remove from Favorits" />
-                <MovieInfo genere={["Action", "Comedy"]} title="Men in Black" duration="120 min" releaseDate="1998" />
+                <MovieInfo
+                    genere={["Action", "Comedy"]}
+                    title={this.props.movie.title}
+                    duration="120 min"
+                    releaseDate={this.props.movie.releaseDate}
+                />
             </div>   
         </div>;
     }

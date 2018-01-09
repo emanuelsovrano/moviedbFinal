@@ -1,3 +1,4 @@
+const webpack = require('webpack');
 const ExtractTextWebpackPlugin = require("extract-text-webpack-plugin");
 
 const extractLess = new ExtractTextWebpackPlugin({
@@ -45,6 +46,10 @@ module.exports = {
     // dependencies, which allows browsers to cache those libraries between builds.
     externals: {
         "react": "React",
-        "react-dom": "ReactDOM"
+        "react-dom": "ReactDOM",
+        "$": "jquery"
     },
+    plugins: [
+        new webpack.ProvidePlugin({$: 'jquery', jQuery: 'jquery', _: 'underscore'})
+    ]
 };  

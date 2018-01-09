@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as $ from 'jquery';
 import { Button, IconButton } from 'office-ui-fabric-react/lib/Button';
 import {autobind} from 'office-ui-fabric-react/lib/Utilities';
 import { SearchBox } from 'office-ui-fabric-react/lib/SearchBox';
@@ -27,7 +28,7 @@ export class MovieDB extends React.Component<IMovieDBProps, IMovieDBState> {
         super(props, context);
         this.state = {
             showNavigation: false,
-            page: PageConfiguration.FAVORITES,
+            page: PageConfiguration.HOME,
             search: ''
         };
     }

@@ -8,7 +8,7 @@ export class GoToSearchButton extends React.Component<{}, {}> {
     public render(): JSX.Element {
         return <div className="GoToSearchButton">
             <Icon className="GoToSearchButton-Icon" iconName="DrillThrough" />
-            <Label className="GoToSearchButton-Label">Go to search...</Label>
+            <p className="GoToSearchButton-Label">Go to search...</p>
         </div>;
     }
 }
