@@ -6,6 +6,7 @@ export class Movie {
     public description: string;
     public cover: string;
     public releaseDate: string;
+    public genereIds: number[];
 
     constructor(data: any) {
         this.id = data.id;
@@ -13,5 +14,6 @@ export class Movie {
         this.description = data.overview;
         this.cover = Movie.baseUrl + data.backdrop_path;
         this.releaseDate = data.release_date;
+        this.genereIds = data.genre_ids;
     }
 }

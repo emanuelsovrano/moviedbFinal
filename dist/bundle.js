@@ -6257,16 +6257,20 @@ var MovieInfo_1 = __webpack_require__(213);
 __webpack_require__(216);
 var MoviePage = /** @class */ (function (_super) {
     __extends(MoviePage, _super);
-    function MoviePage() {
-        return _super !== null && _super.apply(this, arguments) || this;
+    function MoviePage(props, context) {
+        return _super.call(this, props, context) || this;
     }
+    MoviePage.prototype.getSepartedGenereString = function (movie) {
+        var baseUrl = "";
+        return;
+    };
     MoviePage.prototype.render = function () {
         return React.createElement("div", { className: "MoviePage" },
             React.createElement("div", { className: "MoviePage-rightContainer" },
                 React.createElement(MovieCoverAndDescription_1.MovieCardAndDescription, { movieId: this.props.movie.id, imgUrl: this.props.movie.cover, description: this.props.movie.description })),
             React.createElement("div", { className: "MoviePage-leftConatainer" },
                 React.createElement(FavoriteButton_1.FavoriteButton, { iconSize: FavoriteIconSizeEnum_1.FavoriteIconSizeEnum.Large, labelContent: "Add / remove from Favorits" }),
-                React.createElement(MovieInfo_1.MovieInfo, { genere: ["Action", "Comedy"], title: this.props.movie.title, duration: "120 min", releaseDate: this.props.movie.releaseDate })));
+                React.createElement(MovieInfo_1.MovieInfo, { genere: ["Action", "Comedy"], title: this.props.movie.title, releaseDate: this.props.movie.releaseDate })));
     };
     return MoviePage;
 }(React.Component));
@@ -6318,6 +6322,7 @@ tslib_1.__exportStar(__webpack_require__(242), exports);
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
+//Entry Point React
 var React = __webpack_require__(2);
 var ReactDOM = __webpack_require__(37);
 var MovieDB_1 = __webpack_require__(75);
@@ -15200,8 +15205,9 @@ var HomePage = /** @class */ (function (_super) {
     }
     HomePage.prototype.componentDidMount = function () {
         var _this = this;
-        var base = "https://api.themoviedb.org/3/genre/12/movies?api_key=";
-        var url = base + constants_1.apiKey + "&language=en-US&include_adult=false&sort_by=created_at.asc";
+        //https://api.themoviedb.org/3/discover/movie?api_key=ae03a3bcc77aae15f3e3d3bda3d7d325&language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false&page=1
+        var base = "https://api.themoviedb.org/3/movie/top_rated?api_key=";
+        var url = base + constants_1.apiKey + "&language=en-US&page=1";
         $.get(url, function (data) {
             _this.setState({
                 data: new MovieList_1.MovieList(data)
@@ -15244,6 +15250,7 @@ var HomePage = /** @class */ (function (_super) {
     };
     HomePage.prototype.render = function () {
         return React.createElement("div", { className: "HomePage" },
+            React.createElement("h2", null, "Top Rated Movies"),
             this.renderCards(),
             this.renderMoviePanel());
     };
@@ -27252,6 +27259,7 @@ var Movie = /** @class */ (function () {
         this.description = data.overview;
         this.cover = Movie.baseUrl + data.backdrop_path;
         this.releaseDate = data.release_date;
+        this.genereIds = data.genre_ids;
     }
     Movie.baseUrl = 'https://image.tmdb.org/t/p/w500';
     return Movie;
@@ -27507,13 +27515,11 @@ var MovieInfo = /** @class */ (function (_super) {
         return React.createElement("div", { className: "MovieInfo" },
             React.createElement(Label_1.Label, { className: "MovieInfo-Genere" }, this.props.genere),
             React.createElement(Label_1.Label, { className: "MovieInfo-Title" }, this.props.title),
-            React.createElement(Label_1.Label, { className: "MovieInfo-Duration" }, this.props.duration),
             React.createElement(Label_1.Label, { className: "MovieInfo-ReleaseDate" }, this.props.releaseDate));
     };
     MovieInfo.defaultProps = {
         genere: ["No genere defined!"],
         title: "No titel defined!",
-        duration: "No duration avaible",
         releaseDate: "No release date avaible"
     };
     return MovieInfo;

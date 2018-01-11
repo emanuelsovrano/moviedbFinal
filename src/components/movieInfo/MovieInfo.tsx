@@ -5,7 +5,6 @@ import './MovieInfo.less';
 export interface IMovieInfoProps {
     genere: string[];
     title: string;
-    duration?: string;
     releaseDate?: string;
 }
 
@@ -15,7 +14,6 @@ export class MovieInfo extends React.Component<IMovieInfoProps, {}> {
     public static defaultProps: IMovieInfoProps = {
         genere: ["No genere defined!"],
         title: "No titel defined!",
-        duration: "No duration avaible",
         releaseDate: "No release date avaible"
     };
 
@@ -23,7 +21,6 @@ export class MovieInfo extends React.Component<IMovieInfoProps, {}> {
         return <div className="MovieInfo">
             <Label className="MovieInfo-Genere" >{this.props.genere}</Label>
             <Label className="MovieInfo-Title" >{this.props.title}</Label>
-            <Label className="MovieInfo-Duration" >{this.props.duration}</Label>
             <Label className="MovieInfo-ReleaseDate" >{this.props.releaseDate}</Label>
         </div>;
     }

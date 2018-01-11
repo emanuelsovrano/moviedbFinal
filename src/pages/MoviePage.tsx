@@ -5,12 +5,23 @@ import { FavoriteIconSizeEnum} from "../components/favoriteButton/FavoriteIconSi
 import { MovieInfo } from "../components/movieInfo/MovieInfo";
 import './MoviePage.less';
 import { Movie } from "../models/Movie";
+import { apiKey } from "../constants";
 
 export interface IMoviePageProps {
     movie: Movie;
 }
 
 export class MoviePage extends React.Component<IMoviePageProps, {}> {
+    private listOfGenereIds: number[];
+
+    constructor(props: IMoviePageProps, context: any) {
+        super(props, context);
+    }
+
+    private getSepartedGenereString(movie: Movie):string{
+        let baseUrl = "";
+        return
+    }
 
     public render(): JSX.Element {
         return <div className="MoviePage">
@@ -27,7 +38,6 @@ export class MoviePage extends React.Component<IMoviePageProps, {}> {
                 <MovieInfo
                     genere={["Action", "Comedy"]}
                     title={this.props.movie.title}
-                    duration="120 min"
                     releaseDate={this.props.movie.releaseDate}
                 />
             </div>   

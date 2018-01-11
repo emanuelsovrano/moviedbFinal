@@ -7,6 +7,7 @@ import { Panel, PanelType } from "office-ui-fabric-react/lib/Panel";
 import { MoviePage } from "./MoviePage";
 import { autobind } from "office-ui-fabric-react/lib/Utilities";
 import { apiKey } from "../constants";
+import { Label } from "office-ui-fabric-react/lib/Label";
 
 export interface IHomePageProps {
     ka: string;
@@ -28,8 +29,9 @@ export class HomePage extends React.Component<IHomePageProps, IHomePageState> {
     }
 
     public componentDidMount(): void {
-        let base = "https://api.themoviedb.org/3/genre/12/movies?api_key=";
-        let url = base + apiKey + "&language=en-US&include_adult=false&sort_by=created_at.asc";
+        //https://api.themoviedb.org/3/discover/movie?api_key=ae03a3bcc77aae15f3e3d3bda3d7d325&language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false&page=1
+        let base = "https://api.themoviedb.org/3/movie/top_rated?api_key=";
+        let url = base + apiKey + "&language=en-US&page=1";
         $.get(url, (data: any): void => {
             this.setState({
                 data: new MovieList(data)
@@ -92,6 +94,7 @@ export class HomePage extends React.Component<IHomePageProps, IHomePageState> {
 
     public render(): JSX.Element {
         return <div className="HomePage">
+            <h2>Top Rated Movies</h2>
             {this.renderCards()}
             {this.renderMoviePanel()}
         </div>;

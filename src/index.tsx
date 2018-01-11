@@ -1,3 +1,4 @@
+//Entry Point React
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { MovieDB } from "./components/MovieDB";
